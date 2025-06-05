@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AlNavi - 管理者ページ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.html"></script>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-wine-glass-alt text-red-600 mr-2"></i>
+                AlNavi 管理者ページ
+            </h1>
+            <nav class="flex gap-4 items-center">
+                <span id="adminEmail" class="text-sm text-gray-600"></span>
+                <button id="logoutButton" class="text-sm text-red-600 hover:text-red-800 transition-colors hidden">
+                    ログアウト
+                </button>
+                <a href="alchol.html" class="text-sm text-gray-600 hover:text-red-600 transition-colors">サイトに戻る</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ログインフォーム -->
+    <div id="loginForm" class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">管理者ログイン</h2>
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">メールアドレス</label>
+                    <input type="email" id="email" required
+                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">パスワード</label>
+                    <input type="password" id="password" required
+                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                </div>
+                <button type="submit"
+                    class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                    ログイン
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ（ログイン後に表示） -->
+    <main id="adminContent" class="container mx-auto px-4 py-8 hidden">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">承認待ちの投稿</h2>
+            
+            <div id="pendingSubmissions" class="space-y-4">
+                <!-- 投稿はJavaScriptで動的に追加 -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 認証状態の監視
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                // ログイン済み
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('adminContent').classList.remove('hidden');
+                document.getElementById('logoutButton').classList.remove('hidden');
+                document.getElementById('adminEmail').textContent = user.email;
+                
+                // 投稿一覧の取得
+                loadPendingSubmissions();
+            } else {
+                // 未ログイン
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('adminContent').classList.add('hidden');
+                document.getElementById('logoutButton').classList.add('hidden');
+                document.getElementById('adminEmail').textContent = '';
+            }
+        });
+
+        // ログインフォームの処理
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                await firebase.auth().signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+            }
+        });
+
+        // ログアウト処理
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            firebase.auth().signOut();
+        });
+
+        // 承認待ちの投稿を取得
+        function loadPendingSubmissions() {
+            db.collection('submissions')
+                .where('status', '==', 'pending')
+                .orderBy('submittedAt', 'desc')
+                .onSnapshot(snapshot => {
+                    const container = document.getElementById('pendingSubmissions');
+                    container.innerHTML = '';
+
+                    if (snapshot.empty) {
+                        container.innerHTML = `
+                            <div class="text-center py-8 text-gray-600">
+                                承認待ちの投稿はありません
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const submission = document.createElement('div');
+                        submission.className = 'bg-white rounded-lg shadow-sm p-6';
+                        submission.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-800">${data.name}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">${data.type}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="approveSubmission('${doc.id}')" 
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                        承認
+                                    </button>
+                                    <button onclick="rejectSubmission('${doc.id}')"
+                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                        却下
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-gray-700">${data.description}</p>
+                            ${data.imageUrl ? `
+                                <img src="${data.imageUrl}" alt="${data.name}" class="mt-4 max-w-xs rounded-lg">
+                            ` : ''}
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                ${data.taste.map(t => `
+                                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                                        ${t}
+                                    </span>
+                                `).join('')}
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">
+                                投稿日時: ${data.submittedAt ? new Date(data.submittedAt.toDate()).toLocaleString() : '不明'}
+                            </p>
+                        `;
+                        container.appendChild(submission);
+                    });
+                });
+        }
+
+        // 投稿を承認
+        async function approveSubmission(id) {
+            try {
+                const submission = await db.collection('submissions').doc(id).get();
+                const data = submission.data();
+                
+                // 承認済みデータを公開コレクションに移動
+                await db.collection('alcohols').add({
+                    ...data,
+                    status: 'approved',
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    approvedBy: firebase.auth().currentUser.email
+                });
+
+                // 元の投稿を削除
+                await db.collection('submissions').doc(id).delete();
+
+                alert('投稿を承認しました。');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('エラーが発生しました。');
+            }
+        }
+
+        // 投稿を却下
+        async function rejectSubmission(id) {
+            if (confirm('この投稿を却下してもよろしいですか？')) {
+                try {
+                    await db.collection('submissions').doc(id).delete();
+                    alert('投稿を却下しました。');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました。');
+                }
+            }
+        }
+    </script>
+</body>
+</html> 
