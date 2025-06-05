@@ -1,89 +1,166 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AlNavi - お酒の検索ナビ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body class="bg-gray-50 font-sans min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-wine-glass-alt text-red-600 mr-2"></i>
+                AlNavi
+            </h1>
+            <nav class="flex gap-4">
+                <a href="#" class="text-sm text-gray-600 hover:text-red-600 transition-colors">初心者ガイド</a>
+                <a href="#" class="text-sm text-gray-600 hover:text-red-600 transition-colors">お気に入り⭐️</a>
+                <a href="submit.html" class="text-sm text-gray-600 hover:text-red-600 transition-colors">情報を提供する</a>
+            </nav>
+        </div>
+    </header>
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/11.8.1/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/11.8.1/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/11.8.1/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    <!-- メインコンテンツ -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 検索セクション -->
+        <section class="max-w-2xl mx-auto">
+            <!-- 検索ボックス -->
+            <div class="relative">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="お酒の名前、種類、特徴で検索..."
+                    class="w-full p-4 pl-12 rounded-full border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                />
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
-    </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+            <!-- 検索タイプ選択 -->
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button class="px-4 py-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-fire mr-1"></i>人気のお酒
+                </button>
+                <button class="px-4 py-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-star mr-1"></i>初心者向け
+                </button>
+                <button class="px-4 py-2 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-history mr-1"></i>検索履歴
+                </button>
+            </div>
+
+            <!-- 検索フィルター -->
+            <div class="mt-6 flex flex-wrap justify-center gap-2 text-sm text-gray-600">
+                <span class="px-3 py-1 rounded-full bg-gray-100">日本酒</span>
+                <span class="px-3 py-1 rounded-full bg-gray-100">ワイン</span>
+                <span class="px-3 py-1 rounded-full bg-gray-100">ウイスキー</span>
+                <span class="px-3 py-1 rounded-full bg-gray-100">ビール</span>
+                <span class="px-3 py-1 rounded-full bg-gray-100">カクテル</span>
+            </div>
+        </section>
+
+        <!-- 検索結果表示エリア -->
+        <section id="searchResults" class="mt-8 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 検索結果カードのテンプレート -->
+            </div>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-white border-t mt-12">
+        <div class="container mx-auto px-4 py-6 text-center text-sm text-gray-600">
+            <p>© 2024 AlNavi. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        // 基本データ（初期のお酒リスト）
+        const alcoholData = [
+            {
+                id: 1,
+                name: "獺祭 純米大吟醸",
+                type: "日本酒",
+                description: "山口県産の山田錦を使用した純米大吟醸。フルーティーな香りとすっきりとした味わいが特徴。",
+                alcoholContent: 16,
+                rating: 4.8,
+                image: "https://via.placeholder.com/300x200?text=獺祭",
+                tags: ["日本酒", "純米大吟醸", "初心者向け"],
+                price: "3,500円"
+            }
+        ];
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+        // DOM要素の取得
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        // 検索実行関数
+        function performSearch(query) {
+            if (!query.trim()) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            const searchQuery = query.toLowerCase();
+            const filteredResults = alcoholData.filter(item => {
+                return (
+                    item.name.toLowerCase().includes(searchQuery) ||
+                    item.type.toLowerCase().includes(searchQuery) ||
+                    item.description.toLowerCase().includes(searchQuery) ||
+                    (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchQuery)))
+                );
+            });
+
+            displayResults(filteredResults);
         }
-      });
+
+        // 検索結果の表示
+        function displayResults(results) {
+            const resultsContainer = searchResults.querySelector('.grid');
+            resultsContainer.innerHTML = '';
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        検索結果が見つかりませんでした。
+                    </div>
+                `;
+                return;
+            }
+
+            results.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
+                card.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover rounded-lg mb-3" />
+                    <h3 class="font-medium text-gray-800">${item.name}</h3>
+                    <p class="text-sm text-gray-600 mt-1">${item.description}</p>
+                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                        <span>${item.rating}</span>
+                        <span class="mx-2">|</span>
+                        <span>度数: ${item.alcoholContent}%</span>
+                    </div>
+                    <div class="mt-2 text-sm text-gray-500">
+                        <span>${item.price}</span>
+                    </div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+
+            searchResults.classList.remove('hidden');
+        }
+
+        // イベントリスナーの設定
+        searchInput.addEventListener('input', (e) => {
+            performSearch(e.target.value);
+        });
+
+        // 初期表示（人気順）
+        const popularItems = [...alcoholData].sort((a, b) => b.rating - a.rating);
+        displayResults(popularItems);
     </script>
-  </body>
+</body>
 </html>
