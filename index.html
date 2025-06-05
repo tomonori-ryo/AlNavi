@@ -83,8 +83,18 @@
         // データの読み込み
         async function loadAlcoholData() {
             try {
-                const response = await fetch('data/alcohols.json');
+                // GitHub Pages用の絶対パスを使用
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                const response = await fetch(`${baseUrl}data/alcohols.json`);
+                console.log('Fetching data from:', `${baseUrl}data/alcohols.json`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('Loaded data:', data);
+                
                 alcoholData = data.alcohols;
                 // 初期表示（人気順）
                 const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -93,7 +103,8 @@
                 console.error('Error loading data:', error);
                 searchResults.querySelector('.grid').innerHTML = `
                     <div class="col-span-full text-center py-8 text-gray-500">
-                        データの読み込みに失敗しました。
+                        データの読み込みに失敗しました。<br>
+                        エラー: ${error.message}
                     </div>
                 `;
             }
@@ -105,6 +116,9 @@
 
         // 検索実行関数
         function performSearch(query) {
+            console.log('Performing search with query:', query);
+            console.log('Current alcoholData:', alcoholData);
+            
             if (!query.trim()) {
                 // 検索クエリが空の場合は人気順で表示
                 const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
@@ -123,11 +137,14 @@
                     item.priceRange
                 ].filter(Boolean); // nullやundefinedを除外
 
-                return searchableFields.some(field => 
+                const matches = searchableFields.some(field => 
                     field.toLowerCase().includes(searchQuery)
                 );
+                console.log('Searching item:', item.name, 'Matches:', matches);
+                return matches;
             });
 
+            console.log('Filtered results:', filteredResults);
             displayResults(filteredResults);
         }
 
