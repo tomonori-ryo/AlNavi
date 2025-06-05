@@ -77,20 +77,27 @@
     </footer>
 
     <script>
-        // 基本データ（初期のお酒リスト）
-        const alcoholData = [
-            {
-                id: 1,
-                name: "獺祭 純米大吟醸",
-                type: "日本酒",
-                description: "山口県産の山田錦を使用した純米大吟醸。フルーティーな香りとすっきりとした味わいが特徴。",
-                alcoholContent: 16,
-                rating: 4.8,
-                image: "https://via.placeholder.com/300x200?text=獺祭",
-                tags: ["日本酒", "純米大吟醸", "初心者向け"],
-                price: "3,500円"
+        // データの取得と検索機能
+        let alcoholData = [];
+
+        // データの読み込み
+        async function loadAlcoholData() {
+            try {
+                const response = await fetch('data/alcohols.json');
+                const data = await response.json();
+                alcoholData = data.alcohols;
+                // 初期表示（人気順）
+                const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                displayResults(popularItems);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                searchResults.querySelector('.grid').innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        データの読み込みに失敗しました。
+                    </div>
+                `;
             }
-        ];
+        }
 
         // DOM要素の取得
         const searchInput = document.getElementById('searchInput');
@@ -99,17 +106,25 @@
         // 検索実行関数
         function performSearch(query) {
             if (!query.trim()) {
-                searchResults.classList.add('hidden');
+                // 検索クエリが空の場合は人気順で表示
+                const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                displayResults(popularItems);
                 return;
             }
 
             const searchQuery = query.toLowerCase();
             const filteredResults = alcoholData.filter(item => {
-                return (
-                    item.name.toLowerCase().includes(searchQuery) ||
-                    item.type.toLowerCase().includes(searchQuery) ||
-                    item.description.toLowerCase().includes(searchQuery) ||
-                    (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchQuery)))
+                const searchableFields = [
+                    item.name,
+                    item.type,
+                    item.description,
+                    item.origin,
+                    item.taste ? item.taste.join(' ') : '',
+                    item.priceRange
+                ].filter(Boolean); // nullやundefinedを除外
+
+                return searchableFields.some(field => 
+                    field.toLowerCase().includes(searchQuery)
                 );
             });
 
@@ -134,17 +149,29 @@
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
                 card.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover rounded-lg mb-3" />
+                    <img src="${item.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                         alt="${item.name}" 
+                         class="w-full h-48 object-cover rounded-lg mb-3" />
                     <h3 class="font-medium text-gray-800">${item.name}</h3>
                     <p class="text-sm text-gray-600 mt-1">${item.description}</p>
                     <div class="mt-2 flex items-center text-sm text-gray-500">
-                        <i class="fas fa-star text-yellow-400 mr-1"></i>
-                        <span>${item.rating}</span>
-                        <span class="mx-2">|</span>
+                        ${item.rating ? `
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <span>${item.rating}</span>
+                            <span class="mx-2">|</span>
+                        ` : ''}
                         <span>度数: ${item.alcoholContent}%</span>
                     </div>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        ${item.taste ? item.taste.map(t => `
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                                ${t}
+                            </span>
+                        `).join('') : ''}
+                    </div>
                     <div class="mt-2 text-sm text-gray-500">
-                        <span>${item.price}</span>
+                        <span>${item.priceRange}</span>
+                        ${item.origin ? `<span class="ml-2">| ${item.origin}</span>` : ''}
                     </div>
                 `;
                 resultsContainer.appendChild(card);
@@ -158,9 +185,8 @@
             performSearch(e.target.value);
         });
 
-        // 初期表示（人気順）
-        const popularItems = [...alcoholData].sort((a, b) => b.rating - a.rating);
-        displayResults(popularItems);
+        // 初期データの読み込み
+        loadAlcoholData();
     </script>
 </body>
 </html>
