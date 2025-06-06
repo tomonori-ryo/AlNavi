@@ -136,8 +136,11 @@
     </main>
 
     <script>
-        // ImgBB APIキー
-        const IMGBB_API_KEY = 'YOUR_IMGBB_API_KEY'; // .envファイルから読み込む
+        // GitHub APIの設定
+        const GITHUB_API_URL = 'https://api.github.com';
+        const REPO_OWNER = 'tomonori-ryo';
+        const REPO_NAME = 'AlNavi';
+        const IMGBB_API_KEY = 'YOUR_IMGBB_API_KEY'; // ImgBB APIキー
 
         // 画像プレビュー
         document.getElementById('image').addEventListener('change', function(e) {
@@ -153,6 +156,53 @@
             }
         });
 
+        // ファイルの更新
+        async function updateFile(path, content, message) {
+            try {
+                // 現在のファイルの内容を取得
+                const response = await fetch(
+                    `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+
+                let sha = null;
+                if (response.ok) {
+                    const fileData = await response.json();
+                    sha = fileData.sha;
+                }
+
+                // ファイルを更新または作成
+                const updateResponse = await fetch(
+                    `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            content: btoa(JSON.stringify(content, null, 2)),
+                            ...(sha && { sha: sha })
+                        })
+                    }
+                );
+
+                if (!updateResponse.ok) {
+                    throw new Error('ファイルの更新に失敗しました');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error updating file:', error);
+                throw error;
+            }
+        }
+
         // フォーム送信処理
         document.getElementById('submitForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -163,13 +213,14 @@
             try {
                 // フォームデータの取得
                 const formData = {
+                    id: Date.now().toString(), // ユニークIDを生成
                     name: document.getElementById('name').value,
                     type: document.getElementById('type').value,
                     description: document.getElementById('description').value,
                     taste: Array.from(document.querySelectorAll('input[name="taste"]:checked')).map(cb => cb.value),
                     priceRange: document.getElementById('priceRange').value,
                     alcoholContent: parseFloat(document.getElementById('alcoholContent').value),
-                    origin: document.getElementById('origin').value || '',  // 空文字列をデフォルト値として設定
+                    origin: document.getElementById('origin').value || '',
                     status: 'pending',
                     submittedAt: new Date().toISOString()
                 };
@@ -191,16 +242,48 @@
                     }
                 }
 
-                // GitHubにプルリクエストを作成するための情報を表示
-                const submissionData = JSON.stringify(formData, null, 2);
+                // submissions.jsonを取得または作成
+                let submissions = { submissions: [] };
+                try {
+                    const response = await fetch(
+                        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        submissions = JSON.parse(atob(data.content));
+                    }
+                } catch (error) {
+                    console.log('Creating new submissions.json file');
+                }
+
+                // 新しい提出データを追加
+                submissions.submissions.push(formData);
+
+                // submissions.jsonを更新
+                await updateFile(
+                    'data/submissions.json',
+                    submissions,
+                    `Add new submission: ${formData.name}`
+                );
+
+                // 成功メッセージを表示
                 const message = `
 お酒の情報を提供していただき、ありがとうございます！
 
-以下の情報を管理者に送信してください：
+以下の情報が管理者に送信されました：
 
-\`\`\`json
-${submissionData}
-\`\`\`
+お酒の名前: ${formData.name}
+種類: ${formData.type}
+説明: ${formData.description}
+価格帯: ${formData.priceRange}
+アルコール度数: ${formData.alcoholContent}%
+${formData.origin ? `原産地: ${formData.origin}` : ''}
 
 この情報は管理者の確認後に公開されます。
 `;
