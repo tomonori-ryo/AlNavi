@@ -72,3 +72,9 @@ node_modules/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Build output
+dist/
+
+# Dependencies
+package-lock.json
