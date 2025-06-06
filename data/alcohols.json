@@ -69,6 +69,62 @@
       "status": "approved",
       "approvedAt": "2024-03-20T10:00:00Z",
       "approvedBy": "admin"
+    },
+    {
+      "id": "6",
+      "name": "黒霧島",
+      "type": "焼酎",
+      "description": "鹿児島県産の芋焼酎。まろやかな甘みと、スッキリとした後味が特徴です。",
+      "taste": ["甘口", "まろやか"],
+      "priceRange": "1,500円~2,000円",
+      "alcoholContent": 25,
+      "origin": "鹿児島県",
+      "imageUrl": "https://www.kirishima.co.jp/products/img/kurokirishima.jpg",
+      "status": "approved",
+      "approvedAt": "2024-03-20T10:00:00Z",
+      "approvedBy": "admin"
+    },
+    {
+      "id": "7",
+      "name": "レミーマルタン XO",
+      "type": "ブランデー",
+      "description": "フランス産の高級ブランデー。複雑な香りと、まろやかな味わいが特徴です。",
+      "taste": ["まろやか", "甘口", "スパイシー"],
+      "priceRange": "12,000円~15,000円",
+      "alcoholContent": 40,
+      "origin": "フランス",
+      "imageUrl": "https://www.remymartin.com/sites/default/files/styles/gallery/public/2018-03/remy-martin-xo.jpg",
+      "status": "approved",
+      "approvedAt": "2024-03-20T10:00:00Z",
+      "approvedBy": "admin"
+    },
+    {
+      "id": "8",
+      "name": "カンパリ",
+      "type": "リキュール",
+      "description": "イタリア産のビターリキュール。独特の苦みと、フルーティーな香りが特徴です。",
+      "taste": ["苦味", "フルティー"],
+      "priceRange": "2,000円~2,500円",
+      "alcoholContent": 25,
+      "origin": "イタリア",
+      "imageUrl": "https://www.campari.com/sites/default/files/styles/gallery/public/2018-03/campari.jpg",
+      "status": "approved",
+      "approvedAt": "2024-03-20T10:00:00Z",
+      "approvedBy": "admin"
+    },
+    {
+      "id": "9",
+      "name": "梅酒",
+      "type": "その他",
+      "description": "梅の実を漬け込んだ日本伝統の果実酒。甘酸っぱい味わいが特徴です。",
+      "taste": ["甘口", "酸味", "フルティー"],
+      "priceRange": "1,500円~2,500円",
+      "alcoholContent": 12,
+      "origin": "日本",
+      "imageUrl": "https://www.choya.co.jp/products/img/umeshu.jpg",
+      "status": "approved",
+      "approvedAt": "2024-03-20T10:00:00Z",
+      "approvedBy": "admin"
     }
   ]
 }

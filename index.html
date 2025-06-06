@@ -62,12 +62,34 @@
             </div>
 
             <!-- 検索フィルター -->
-            <div class="mt-6 flex flex-wrap justify-center gap-2 text-sm text-gray-600">
-                <span class="px-3 py-1 rounded-full bg-gray-100">日本酒</span>
-                <span class="px-3 py-1 rounded-full bg-gray-100">ワイン</span>
-                <span class="px-3 py-1 rounded-full bg-gray-100">ウイスキー</span>
-                <span class="px-3 py-1 rounded-full bg-gray-100">ビール</span>
-                <span class="px-3 py-1 rounded-full bg-gray-100">カクテル</span>
+            <div class="mt-6 flex flex-wrap justify-center gap-2 text-sm">
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="ビール">
+                    <i class="fas fa-beer mr-1"></i>ビール
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="日本酒">
+                    <i class="fas fa-wine-bottle mr-1"></i>日本酒
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="焼酎">
+                    <i class="fas fa-wine-glass mr-1"></i>焼酎
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="ワイン">
+                    <i class="fas fa-wine-glass-alt mr-1"></i>ワイン
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="ウイスキー">
+                    <i class="fas fa-glass-whiskey mr-1"></i>ウイスキー
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="ブランデー">
+                    <i class="fas fa-glass-martini-alt mr-1"></i>ブランデー
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="リキュール">
+                    <i class="fas fa-cocktail mr-1"></i>リキュール
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="カクテル">
+                    <i class="fas fa-glass-cheers mr-1"></i>カクテル
+                </button>
+                <button class="category-filter px-3 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" data-category="その他">
+                    <i class="fas fa-ellipsis-h mr-1"></i>その他
+                </button>
             </div>
 
             <!-- 味の特徴フィルター -->
@@ -260,28 +282,113 @@
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
 
-        // 検索実行関数
+        // カテゴリフィルターの処理
+        let activeCategoryFilters = new Set();
+
+        function initializeCategoryFilters() {
+            document.querySelectorAll('.category-filter').forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.dataset.category;
+                    if (activeCategoryFilters.has(category)) {
+                        activeCategoryFilters.delete(category);
+                        button.classList.remove('ring-2', 'ring-offset-2', 'bg-gray-200');
+                    } else {
+                        activeCategoryFilters.add(category);
+                        button.classList.add('ring-2', 'ring-offset-2', 'bg-gray-200');
+                    }
+                    updateSearchResults();
+                });
+            });
+        }
+
+        // 味の特徴の定義
+        const TASTE_CHARACTERISTICS = {
+            '甘口': { icon: 'candy-cane', color: 'pink' },
+            '辛口': { icon: 'pepper-hot', color: 'red' },
+            '苦味': { icon: 'coffee', color: 'yellow' },
+            '酸味': { icon: 'lemon', color: 'green' },
+            'フルティー': { icon: 'apple-alt', color: 'purple' },
+            'スパイシー': { icon: 'pepper-hot', color: 'orange' },
+            'ドライ': { icon: 'wind', color: 'blue' },
+            'まろやか': { icon: 'cloud', color: 'indigo' }
+        };
+
+        // 味の特徴フィルターの処理
+        let activeTasteFilters = new Set();
+
+        function initializeTasteFilters() {
+            document.querySelectorAll('.taste-filter').forEach(button => {
+                button.addEventListener('click', () => {
+                    const taste = button.dataset.taste;
+                    if (activeTasteFilters.has(taste)) {
+                        activeTasteFilters.delete(taste);
+                        button.classList.remove('ring-2', 'ring-offset-2');
+                    } else {
+                        activeTasteFilters.add(taste);
+                        button.classList.add('ring-2', 'ring-offset-2');
+                    }
+                    updateSearchResults();
+                });
+            });
+        }
+
+        // updateSearchResults関数を更新
+        function updateSearchResults() {
+            const query = searchInput.value.trim();
+            if (query) {
+                performSearch(query);
+            } else if (activeCategoryFilters.size > 0) {
+                filterByCategory();
+            } else if (activeTasteFilters.size > 0) {
+                filterByTaste();
+            } else {
+                showSearchHistory();
+            }
+        }
+
+        // カテゴリによるフィルタリング
+        function filterByCategory() {
+            if (activeCategoryFilters.size === 0) {
+                showSearchHistory();
+                return;
+            }
+
+            const filteredResults = alcoholData.filter(item => {
+                return Array.from(activeCategoryFilters).includes(item.type);
+            });
+
+            displayResults(filteredResults);
+        }
+
+        // performSearch関数を更新
         function performSearch(query) {
             console.log('Performing search with query:', query);
-            console.log('Current alcoholData:', alcoholData);
             
-            // データが空の場合
             if (!alcoholData || alcoholData.length === 0) {
                 showNoDataMessage();
                 return;
             }
             
             if (!query.trim()) {
-                // 検索クエリが空の場合は検索履歴を表示
-                showSearchHistory();
+                if (activeCategoryFilters.size > 0) {
+                    filterByCategory();
+                } else if (activeTasteFilters.size > 0) {
+                    filterByTaste();
+                } else {
+                    showSearchHistory();
+                }
                 return;
             }
 
-            // 検索履歴に追加
             addToSearchHistory(query);
 
             const searchQuery = query.toLowerCase();
             const filteredResults = alcoholData.filter(item => {
+                // カテゴリフィルターが有効な場合は、そのカテゴリのみを検索
+                if (activeCategoryFilters.size > 0 && !activeCategoryFilters.has(item.type)) {
+                    return false;
+                }
+
                 const searchableFields = [
                     item.name,
                     item.type,
@@ -298,6 +405,89 @@
 
             console.log('Filtered results:', filteredResults);
             displayResults(filteredResults);
+        }
+
+        // 検索結果の表示
+        function displayResults(results) {
+            const resultsContainer = searchResults.querySelector('.grid');
+            if (!resultsContainer.querySelector('h3')) {
+                resultsContainer.innerHTML = '';
+            }
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        ${activeTasteFilters.size > 0 
+                            ? '選択した味の特徴に一致するお酒が見つかりませんでした。'
+                            : '検索結果が見つかりませんでした。'}
+                    </div>
+                `;
+                return;
+            }
+
+            results.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
+                
+                // 味の特徴の表示を改善
+                const tasteHtml = item.taste ? item.taste.map(taste => {
+                    const tasteInfo = TASTE_CHARACTERISTICS[taste] || { icon: 'circle', color: 'gray' };
+                    return `
+                        <span class="px-2 py-1 text-xs rounded-full bg-${tasteInfo.color}-50 text-${tasteInfo.color}-600 flex items-center gap-1">
+                            <i class="fas fa-${tasteInfo.icon}"></i>
+                            ${taste}
+                        </span>
+                    `;
+                }).join('') : '';
+
+                // 評価コンポーネントのHTML
+                const ratingHtml = `
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex items-center">
+                                ${[1, 2, 3, 4, 5].map(star => `
+                                    <button 
+                                        onclick="saveUserRating('${item.id}', ${star})"
+                                        class="text-${getAverageRating(item.id) >= star ? 'yellow' : 'gray'}-400 hover:text-yellow-400 transition-colors"
+                                    >
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">
+                                ${getAverageRating(item.id) ? `あなたの評価: ${getAverageRating(item.id)}/5` : '評価する'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <img src="${item.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                         alt="${item.name}" 
+                         class="w-full h-48 object-cover rounded-lg mb-3" />
+                    <h3 class="font-medium text-gray-800">${item.name}</h3>
+                    <p class="text-sm text-gray-600 mt-1">${item.description}</p>
+                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                        ${item.rating ? `
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                            <span>${item.rating}</span>
+                            <span class="mx-2">|</span>
+                        ` : ''}
+                        <span>度数: ${item.alcoholContent}%</span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        ${tasteHtml}
+                    </div>
+                    <div class="mt-2 text-sm text-gray-500">
+                        <span>${item.priceRange}</span>
+                        ${item.origin ? `<span class="ml-2">| ${item.origin}</span>` : ''}
+                    </div>
+                    ${ratingHtml}
+                `;
+                resultsContainer.appendChild(card);
+            });
+
+            searchResults.classList.remove('hidden');
         }
 
         // ユーザー評価の管理
@@ -574,48 +764,7 @@
             displayResults(recommendations);
         }
 
-        // 味の特徴の定義
-        const TASTE_CHARACTERISTICS = {
-            '甘口': { icon: 'candy-cane', color: 'pink' },
-            '辛口': { icon: 'pepper-hot', color: 'red' },
-            '苦味': { icon: 'coffee', color: 'yellow' },
-            '酸味': { icon: 'lemon', color: 'green' },
-            'フルティー': { icon: 'apple-alt', color: 'purple' },
-            'スパイシー': { icon: 'pepper-hot', color: 'orange' },
-            'ドライ': { icon: 'wind', color: 'blue' },
-            'まろやか': { icon: 'cloud', color: 'indigo' }
-        };
-
         // 味の特徴フィルターの処理
-        let activeTasteFilters = new Set();
-
-        function initializeTasteFilters() {
-            document.querySelectorAll('.taste-filter').forEach(button => {
-                button.addEventListener('click', () => {
-                    const taste = button.dataset.taste;
-                    if (activeTasteFilters.has(taste)) {
-                        activeTasteFilters.delete(taste);
-                        button.classList.remove('ring-2', 'ring-offset-2');
-                    } else {
-                        activeTasteFilters.add(taste);
-                        button.classList.add('ring-2', 'ring-offset-2');
-                    }
-                    updateSearchResults();
-                });
-            });
-        }
-
-        function updateSearchResults() {
-            const query = searchInput.value.trim();
-            if (query) {
-                performSearch(query);
-            } else if (activeTasteFilters.size > 0) {
-                filterByTaste();
-            } else {
-                showSearchHistory();
-            }
-        }
-
         function filterByTaste() {
             if (activeTasteFilters.size === 0) {
                 showSearchHistory();
@@ -630,89 +779,6 @@
             });
 
             displayResults(filteredResults);
-        }
-
-        // 検索結果の表示
-        function displayResults(results) {
-            const resultsContainer = searchResults.querySelector('.grid');
-            if (!resultsContainer.querySelector('h3')) {
-                resultsContainer.innerHTML = '';
-            }
-
-            if (results.length === 0) {
-                resultsContainer.innerHTML = `
-                    <div class="col-span-full text-center py-8 text-gray-500">
-                        ${activeTasteFilters.size > 0 
-                            ? '選択した味の特徴に一致するお酒が見つかりませんでした。'
-                            : '検索結果が見つかりませんでした。'}
-                    </div>
-                `;
-                return;
-            }
-
-            results.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
-                
-                // 味の特徴の表示を改善
-                const tasteHtml = item.taste ? item.taste.map(taste => {
-                    const tasteInfo = TASTE_CHARACTERISTICS[taste] || { icon: 'circle', color: 'gray' };
-                    return `
-                        <span class="px-2 py-1 text-xs rounded-full bg-${tasteInfo.color}-50 text-${tasteInfo.color}-600 flex items-center gap-1">
-                            <i class="fas fa-${tasteInfo.icon}"></i>
-                            ${taste}
-                        </span>
-                    `;
-                }).join('') : '';
-
-                // 評価コンポーネントのHTML
-                const ratingHtml = `
-                    <div class="mt-3 flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="flex items-center">
-                                ${[1, 2, 3, 4, 5].map(star => `
-                                    <button 
-                                        onclick="saveUserRating('${item.id}', ${star})"
-                                        class="text-${getAverageRating(item.id) >= star ? 'yellow' : 'gray'}-400 hover:text-yellow-400 transition-colors"
-                                    >
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                `).join('')}
-                            </div>
-                            <span class="ml-2 text-sm text-gray-500">
-                                ${getAverageRating(item.id) ? `あなたの評価: ${getAverageRating(item.id)}/5` : '評価する'}
-                            </span>
-                        </div>
-                    </div>
-                `;
-
-                card.innerHTML = `
-                    <img src="${item.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" 
-                         alt="${item.name}" 
-                         class="w-full h-48 object-cover rounded-lg mb-3" />
-                    <h3 class="font-medium text-gray-800">${item.name}</h3>
-                    <p class="text-sm text-gray-600 mt-1">${item.description}</p>
-                    <div class="mt-2 flex items-center text-sm text-gray-500">
-                        ${item.rating ? `
-                            <i class="fas fa-star text-yellow-400 mr-1"></i>
-                            <span>${item.rating}</span>
-                            <span class="mx-2">|</span>
-                        ` : ''}
-                        <span>度数: ${item.alcoholContent}%</span>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                        ${tasteHtml}
-                    </div>
-                    <div class="mt-2 text-sm text-gray-500">
-                        <span>${item.priceRange}</span>
-                        ${item.origin ? `<span class="ml-2">| ${item.origin}</span>` : ''}
-                    </div>
-                    ${ratingHtml}
-                `;
-                resultsContainer.appendChild(card);
-            });
-
-            searchResults.classList.remove('hidden');
         }
 
         // 現在の表示を更新する関数
@@ -757,6 +823,7 @@
         loadAlcoholData().then(() => {
             updateCurrentDisplay();
             initializeTasteFilters();
+            initializeCategoryFilters();
         });
     </script>
   </body>
