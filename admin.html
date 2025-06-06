@@ -40,7 +40,11 @@
                             GitHubアクセストークンの取得方法
                         </a>
                     </p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        必要な権限: <code class="bg-gray-100 px-1 rounded">repo</code>
+                    </p>
                 </div>
+                <div id="loginError" class="hidden text-sm text-red-600"></div>
                 <button id="loginButton" 
                     class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
                     ログイン
@@ -98,7 +102,11 @@
                             GitHubアクセストークンの取得方法
                         </a>
                     </p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        必要な権限: <code class="bg-gray-100 px-1 rounded">repo</code>
+                    </p>
                 </div>
+                <div id="loginError" class="hidden text-sm text-red-600"></div>
                 <button id="loginButton" 
                     class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
                     ログイン
@@ -106,54 +114,144 @@
             </div>
         `;
 
+        // ログイン処理
+        loginButton.addEventListener('click', async () => {
+            const token = document.getElementById('githubToken').value;
+            const loginError = document.getElementById('loginError');
+            loginError.classList.add('hidden');
+            loginButton.disabled = true;
+            loginButton.textContent = '認証中...';
+
+            console.log('ログイン処理を開始します...');
+
+            try {
+                // GitHub APIで認証テスト
+                console.log('GitHub APIに認証リクエストを送信します...');
+                const response = await fetch(`${GITHUB_API_URL}/user`, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                console.log('認証レスポンス:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                const responseData = await response.json();
+                console.log('認証レスポンスデータ:', responseData);
+
+                if (response.ok) {
+                    console.log('ユーザー認証成功:', responseData.login);
+                    
+                    // リポジトリへのアクセス権限を確認
+                    console.log('リポジトリアクセス権限を確認します...');
+                    const repoResponse = await fetch(
+                        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}`,
+                        {
+                            headers: {
+                                'Authorization': `token ${token}`,
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+
+                    console.log('リポジトリレスポンス:', {
+                        status: repoResponse.status,
+                        statusText: repoResponse.statusText,
+                        ok: repoResponse.ok
+                    });
+
+                    if (repoResponse.ok) {
+                        const repoData = await repoResponse.json();
+                        console.log('リポジトリアクセス成功:', repoData.full_name);
+                        
+                        githubToken = token;
+                        localStorage.setItem('githubToken', token);
+                        console.log('トークンを保存しました');
+                        
+                        checkLoginStatus();
+                        console.log('ログイン状態を更新しました');
+                    } else {
+                        const repoError = await repoResponse.json();
+                        console.error('リポジトリアクセスエラー:', repoError);
+                        throw new Error('リポジトリへのアクセス権限がありません。トークンにrepo権限が必要です。');
+                    }
+                } else {
+                    console.error('認証エラー:', responseData);
+                    throw new Error(responseData.message || '認証に失敗しました');
+                }
+            } catch (error) {
+                console.error('ログインエラーの詳細:', error);
+                loginError.textContent = `エラー: ${error.message}`;
+                loginError.classList.remove('hidden');
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'ログイン';
+            }
+        });
+
         // ログイン状態の管理
         function checkLoginStatus() {
+            console.log('ログイン状態を確認します...');
             const token = localStorage.getItem('githubToken');
+            console.log('保存されたトークン:', token ? 'あり' : 'なし');
+
             if (token) {
                 githubToken = token;
-                loginForm.classList.add('hidden');
-                adminDashboard.classList.remove('hidden');
-                logoutButton.classList.remove('hidden');
-                loadSubmissions();
+                console.log('トークンを設定しました');
+                
+                // トークンの有効性を確認
+                fetch(`${GITHUB_API_URL}/user`, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                })
+                .then(response => {
+                    console.log('トークン検証レスポンス:', {
+                        status: response.status,
+                        ok: response.ok
+                    });
+                    
+                    if (response.ok) {
+                        loginForm.classList.add('hidden');
+                        adminDashboard.classList.remove('hidden');
+                        logoutButton.classList.remove('hidden');
+                        console.log('ダッシュボードを表示します');
+                        loadSubmissions();
+                    } else {
+                        console.log('トークンが無効です。ログアウトします。');
+                        localStorage.removeItem('githubToken');
+                        loginForm.classList.remove('hidden');
+                        adminDashboard.classList.add('hidden');
+                        logoutButton.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('トークン検証エラー:', error);
+                    localStorage.removeItem('githubToken');
+                    loginForm.classList.remove('hidden');
+                    adminDashboard.classList.add('hidden');
+                    logoutButton.classList.add('hidden');
+                });
             } else {
+                console.log('トークンがありません。ログインフォームを表示します。');
                 loginForm.classList.remove('hidden');
                 adminDashboard.classList.add('hidden');
                 logoutButton.classList.add('hidden');
             }
         }
 
-        // ログイン処理
-        loginButton.addEventListener('click', async () => {
-            const token = document.getElementById('githubToken').value;
-            try {
-                // GitHub APIで認証テスト
-                const response = await fetch(`${GITHUB_API_URL}/user`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-
-                if (response.ok) {
-                    const userData = await response.json();
-                    console.log('Authenticated as:', userData.login);
-                    githubToken = token;
-                    localStorage.setItem('githubToken', token);
-                    checkLoginStatus();
-                } else {
-                    throw new Error('認証に失敗しました');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                alert('ログインに失敗しました。アクセストークンを確認してください。');
-            }
-        });
-
         // ログアウト処理
         logoutButton.addEventListener('click', () => {
-            githubToken = '';
-            localStorage.removeItem('githubToken');
-            checkLoginStatus();
+            if (confirm('ログアウトしますか？')) {
+                githubToken = '';
+                localStorage.removeItem('githubToken');
+                checkLoginStatus();
+            }
         });
 
         // 提出データの読み込み
@@ -163,7 +261,7 @@
                     `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${githubToken}`,
+                            'Authorization': `token ${githubToken}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     }
@@ -180,7 +278,8 @@
                 console.error('Error loading submissions:', error);
                 submissionsList.innerHTML = `
                     <div class="text-center text-gray-500 py-4">
-                        データの読み込みに失敗しました。
+                        データの読み込みに失敗しました。<br>
+                        ${error.message}
                     </div>
                 `;
             }
@@ -194,7 +293,7 @@
                     `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${githubToken}`,
+                            'Authorization': `token ${githubToken}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     }
@@ -213,7 +312,7 @@
                     {
                         method: 'PUT',
                         headers: {
-                            'Authorization': `Bearer ${githubToken}`,
+                            'Authorization': `token ${githubToken}`,
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
@@ -226,7 +325,8 @@
                 );
 
                 if (!updateResponse.ok) {
-                    throw new Error('ファイルの更新に失敗しました');
+                    const errorData = await updateResponse.json();
+                    throw new Error(errorData.message || 'ファイルの更新に失敗しました');
                 }
 
                 return true;
@@ -248,7 +348,7 @@
                     `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${githubToken}`,
+                            'Authorization': `token ${githubToken}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     }
@@ -272,7 +372,7 @@
                         `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/alcohols.json`,
                         {
                             headers: {
-                                'Authorization': `Bearer ${githubToken}`,
+                                'Authorization': `token ${githubToken}`,
                                 'Accept': 'application/vnd.github.v3+json'
                             }
                         }
