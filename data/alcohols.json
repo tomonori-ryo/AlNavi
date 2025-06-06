@@ -2,14 +2,14 @@
   "alcohols": [
     {
       "id": "1",
-      "name": "獺祭 純米大吟醸",
-      "type": "日本酒",
-      "description": "山口県産の山田錦を使用した純米大吟醸。フルーティーな香りとすっきりとした味わいが特徴。",
-      "taste": ["甘口", "フルーティー"],
-      "priceRange": "3,000円~5,000円",
-      "alcoholContent": 16,
-      "origin": "日本 山口県",
-      "imageUrl": "https://via.placeholder.com/300x200?text=獺祭",
+      "name": "一番搾り",
+      "type": "ビール",
+      "description": "ビールの中でも特に苦味が強いタイプ。",
+      "taste": ["旨味", "苦味"],
+      "priceRange": "220円~270円",
+      "alcoholContent": 5,
+      "origin": "キリンビール",
+      "imageUrl": "https://i.pinimg.com/736x/06/b9/4e/06b94ef97104113ddf5b9ee2a06f219c.jpg",
       "status": "approved",
       "approvedAt": "2024-03-20T10:00:00Z",
       "approvedBy": "admin"
