@@ -47,6 +47,9 @@
 
             <!-- 検索タイプ選択 -->
             <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="recommendationsBtn" class="px-4 py-2 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-thumbs-up mr-1"></i>あなたへのおすすめ
+                </button>
                 <button class="px-4 py-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-sm font-medium">
                     <i class="fas fa-fire mr-1"></i>人気のお酒
                 </button>
@@ -269,10 +272,286 @@
             displayResults(filteredResults);
         }
 
+        // ユーザー評価の管理
+        function getUserRatings() {
+            const ratings = localStorage.getItem('userRatings');
+            return ratings ? JSON.parse(ratings) : {};
+        }
+
+        function saveUserRating(alcoholId, rating) {
+            const ratings = getUserRatings();
+            ratings[alcoholId] = rating;
+            localStorage.setItem('userRatings', JSON.stringify(ratings));
+            // 評価後に現在の表示を更新
+            updateCurrentDisplay();
+        }
+
+        function getAverageRating(alcoholId) {
+            const ratings = getUserRatings();
+            return ratings[alcoholId] || 0;
+        }
+
+        // おすすめのお酒を取得
+        function getRecommendedAlcohols() {
+            const ratings = getUserRatings();
+            const ratedAlcohols = Object.entries(ratings)
+                .filter(([_, rating]) => rating >= 4) // 4以上の評価のみを考慮
+                .map(([id]) => id);
+
+            if (ratedAlcohols.length === 0) {
+                return alcoholData.slice(0, 3); // 評価がない場合は最初の3つを表示
+            }
+
+            // 評価の高いお酒の特徴を分析
+            const userPreferences = analyzeUserPreferences(ratedAlcohols);
+            
+            // おすすめのお酒を計算
+            return alcoholData
+                .filter(alcohol => !ratedAlcohols.includes(alcohol.id)) // まだ評価していないお酒のみ
+                .map(alcohol => ({
+                    ...alcohol,
+                    score: calculateRecommendationScore(alcohol, userPreferences)
+                }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 3); // 上位3つを返す
+        }
+
+        // ユーザーの好みを分析
+        function analyzeUserPreferences(ratedAlcoholIds) {
+            const preferences = {
+                types: {},
+                tastes: {},
+                origins: {},
+                priceRanges: {},
+                alcoholContent: {
+                    min: Infinity,
+                    max: -Infinity,
+                    average: 0,
+                    total: 0,
+                    count: 0
+                }
+            };
+
+            ratedAlcoholIds.forEach(id => {
+                const alcohol = alcoholData.find(a => a.id === id);
+                if (alcohol) {
+                    // 既存の集計処理
+                    preferences.types[alcohol.type] = (preferences.types[alcohol.type] || 0) + 1;
+                    
+                    if (alcohol.taste) {
+                        alcohol.taste.forEach(taste => {
+                            preferences.tastes[taste] = (preferences.tastes[taste] || 0) + 1;
+                        });
+                    }
+                    
+                    if (alcohol.origin) {
+                        preferences.origins[alcohol.origin] = (preferences.origins[alcohol.origin] || 0) + 1;
+                    }
+                    
+                    if (alcohol.priceRange) {
+                        preferences.priceRanges[alcohol.priceRange] = (preferences.priceRanges[alcohol.priceRange] || 0) + 1;
+                    }
+
+                    // アルコール度数の分析
+                    if (alcohol.alcoholContent) {
+                        const content = parseFloat(alcohol.alcoholContent);
+                        if (!isNaN(content)) {
+                            preferences.alcoholContent.min = Math.min(preferences.alcoholContent.min, content);
+                            preferences.alcoholContent.max = Math.max(preferences.alcoholContent.max, content);
+                            preferences.alcoholContent.total += content;
+                            preferences.alcoholContent.count += 1;
+                        }
+                    }
+                }
+            });
+
+            // アルコール度数の平均を計算
+            if (preferences.alcoholContent.count > 0) {
+                preferences.alcoholContent.average = preferences.alcoholContent.total / preferences.alcoholContent.count;
+            }
+
+            return preferences;
+        }
+
+        // おすすめスコアを計算
+        function calculateRecommendationScore(alcohol, preferences) {
+            // 各要素の重み付け
+            const WEIGHTS = {
+                TYPE: 2.0,        // お酒の種類（2倍の重み）
+                TASTE: 1.0,       // 味の特徴
+                ORIGIN: 1.0,      // 産地
+                PRICE: 1.0,       // 価格帯
+                ALCOHOL: 1.5      // アルコール度数（1.5倍の重み）
+            };
+
+            // 各要素のスコアを計算（0-1の範囲に正規化）
+            const scores = {
+                type: 0,
+                taste: 0,
+                origin: 0,
+                price: 0,
+                alcohol: 0
+            };
+
+            // 1. お酒の種類のスコア
+            if (preferences.types[alcohol.type]) {
+                const maxTypeCount = Math.max(...Object.values(preferences.types));
+                scores.type = preferences.types[alcohol.type] / maxTypeCount;
+            }
+
+            // 2. 味の特徴のスコア
+            if (alcohol.taste && alcohol.taste.length > 0) {
+                let tasteScore = 0;
+                let maxTasteCount = Math.max(...Object.values(preferences.tastes));
+                
+                alcohol.taste.forEach(taste => {
+                    if (preferences.tastes[taste]) {
+                        tasteScore += preferences.tastes[taste] / maxTasteCount;
+                    }
+                });
+                
+                // 平均を取る
+                scores.taste = tasteScore / alcohol.taste.length;
+            }
+
+            // 3. 産地のスコア
+            if (alcohol.origin && preferences.origins[alcohol.origin]) {
+                const maxOriginCount = Math.max(...Object.values(preferences.origins));
+                scores.origin = preferences.origins[alcohol.origin] / maxOriginCount;
+            }
+
+            // 4. 価格帯のスコア
+            if (alcohol.priceRange && preferences.priceRanges[alcohol.priceRange]) {
+                const maxPriceCount = Math.max(...Object.values(preferences.priceRanges));
+                scores.price = preferences.priceRanges[alcohol.priceRange] / maxPriceCount;
+            }
+
+            // 5. アルコール度数のスコア
+            if (alcohol.alcoholContent && preferences.alcoholContent.count > 0) {
+                const content = parseFloat(alcohol.alcoholContent);
+                if (!isNaN(content)) {
+                    // 平均値との差を計算
+                    const diff = Math.abs(content - preferences.alcoholContent.average);
+                    const maxDiff = Math.max(
+                        Math.abs(preferences.alcoholContent.max - preferences.alcoholContent.average),
+                        Math.abs(preferences.alcoholContent.min - preferences.alcoholContent.average)
+                    );
+                    
+                    // 差が小さいほど高スコア（0-1の範囲）
+                    scores.alcohol = 1 - (diff / maxDiff);
+
+                    // 好みの範囲内にある場合はボーナス（0.2点）
+                    if (content >= preferences.alcoholContent.min && content <= preferences.alcoholContent.max) {
+                        scores.alcohol += 0.2;
+                        scores.alcohol = Math.min(scores.alcohol, 1); // 最大1に制限
+                    }
+                }
+            }
+
+            // 最終スコアの計算（重み付け）
+            const finalScore = 
+                scores.type * WEIGHTS.TYPE +
+                scores.taste * WEIGHTS.TASTE +
+                scores.origin * WEIGHTS.ORIGIN +
+                scores.price * WEIGHTS.PRICE +
+                scores.alcohol * WEIGHTS.ALCOHOL;
+
+            // デバッグ情報（開発時のみ使用）
+            if (window.location.hostname === 'localhost') {
+                console.log('Recommendation scores for', alcohol.name, {
+                    scores,
+                    weights: WEIGHTS,
+                    finalScore
+                });
+            }
+
+            return finalScore;
+        }
+
+        // おすすめのお酒を表示
+        function showRecommendations() {
+            const recommendations = getRecommendedAlcohols();
+            const resultsContainer = searchResults.querySelector('.grid');
+            resultsContainer.innerHTML = '';
+
+            // ヘッダー
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'col-span-full mb-4';
+            
+            // ユーザーの好みの分析
+            const preferences = analyzeUserPreferences(
+                Object.entries(getUserRatings())
+                    .filter(([_, rating]) => rating >= 4)
+                    .map(([id]) => id)
+            );
+            
+            // 好みの詳細情報を表示
+            let preferenceDetails = [];
+            
+            // アルコール度数
+            if (preferences.alcoholContent.count > 0) {
+                preferenceDetails.push(`
+                    <p class="text-sm text-gray-600 mt-1">
+                        アルコール度数: ${preferences.alcoholContent.min.toFixed(1)}% 〜 ${preferences.alcoholContent.max.toFixed(1)}%
+                        (平均: ${preferences.alcoholContent.average.toFixed(1)}%)
+                    </p>
+                `);
+            }
+
+            // 好みの種類
+            const favoriteTypes = Object.entries(preferences.types)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3)
+                .map(([type, count]) => type);
+            
+            if (favoriteTypes.length > 0) {
+                preferenceDetails.push(`
+                    <p class="text-sm text-gray-600 mt-1">
+                        好みの種類: ${favoriteTypes.join('、')}
+                    </p>
+                `);
+            }
+
+            // 好みの味の特徴
+            const favoriteTastes = Object.entries(preferences.tastes)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3)
+                .map(([taste, count]) => taste);
+            
+            if (favoriteTastes.length > 0) {
+                preferenceDetails.push(`
+                    <p class="text-sm text-gray-600 mt-1">
+                        好みの味: ${favoriteTastes.join('、')}
+                    </p>
+                `);
+            }
+
+            headerDiv.innerHTML = `
+                <h3 class="text-lg font-medium text-gray-800">あなたへのおすすめ</h3>
+                <p class="text-sm text-gray-600 mt-1">あなたの評価に基づいて選んだおすすめのお酒です</p>
+                ${preferenceDetails.join('')}
+            `;
+            resultsContainer.appendChild(headerDiv);
+
+            if (recommendations.length === 0) {
+                resultsContainer.innerHTML += `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        まだ評価が少ないため、おすすめを表示できません。<br>
+                        お酒を評価して、より良いおすすめを受け取りましょう！
+                    </div>
+                `;
+                return;
+            }
+
+            displayResults(recommendations);
+        }
+
         // 検索結果の表示
         function displayResults(results) {
             const resultsContainer = searchResults.querySelector('.grid');
-            resultsContainer.innerHTML = '';
+            if (!resultsContainer.querySelector('h3')) { // ヘッダーがない場合のみクリア
+                resultsContainer.innerHTML = '';
+            }
 
             if (results.length === 0) {
                 resultsContainer.innerHTML = `
@@ -286,6 +565,28 @@
             results.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
+                
+                // 評価コンポーネントのHTML
+                const ratingHtml = `
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex items-center">
+                                ${[1, 2, 3, 4, 5].map(star => `
+                                    <button 
+                                        onclick="saveUserRating('${item.id}', ${star})"
+                                        class="text-${getAverageRating(item.id) >= star ? 'yellow' : 'gray'}-400 hover:text-yellow-400 transition-colors"
+                                    >
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">
+                                ${getAverageRating(item.id) ? `あなたの評価: ${getAverageRating(item.id)}/5` : '評価する'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+
                 card.innerHTML = `
                     <img src="${item.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" 
                          alt="${item.name}" 
@@ -311,11 +612,27 @@
                         <span>${item.priceRange}</span>
                         ${item.origin ? `<span class="ml-2">| ${item.origin}</span>` : ''}
                     </div>
+                    ${ratingHtml}
                 `;
                 resultsContainer.appendChild(card);
             });
 
             searchResults.classList.remove('hidden');
+        }
+
+        // 現在の表示を更新する関数
+        function updateCurrentDisplay() {
+            const activeButton = document.querySelector('.flex-wrap button.bg-purple-50');
+            if (activeButton) {
+                showRecommendations();
+            } else {
+                const query = searchInput.value.trim();
+                if (query) {
+                    performSearch(query);
+                } else {
+                    showSearchHistory();
+                }
+            }
         }
 
         // 検索フォームの処理
@@ -336,8 +653,15 @@
             showSearchHistory();
         });
 
+        // おすすめボタンのイベントリスナー
+        document.getElementById('recommendationsBtn').addEventListener('click', () => {
+            showRecommendations();
+        });
+
         // 初期データの読み込み
-        loadAlcoholData();
+        loadAlcoholData().then(() => {
+            updateCurrentDisplay();
+        });
     </script>
   </body>
 </html>
