@@ -69,6 +69,34 @@
                 <span class="px-3 py-1 rounded-full bg-gray-100">ビール</span>
                 <span class="px-3 py-1 rounded-full bg-gray-100">カクテル</span>
             </div>
+
+            <!-- 味の特徴フィルター -->
+            <div class="mt-4 flex flex-wrap justify-center gap-2">
+                <button class="taste-filter px-3 py-1 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors text-sm" data-taste="甘口">
+                    <i class="fas fa-candy-cane mr-1"></i>甘口
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-sm" data-taste="辛口">
+                    <i class="fas fa-pepper-hot mr-1"></i>辛口
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-100 transition-colors text-sm" data-taste="苦味">
+                    <i class="fas fa-coffee mr-1"></i>苦味
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-sm" data-taste="酸味">
+                    <i class="fas fa-lemon mr-1"></i>酸味
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors text-sm" data-taste="フルティー">
+                    <i class="fas fa-apple-alt mr-1"></i>フルティー
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors text-sm" data-taste="スパイシー">
+                    <i class="fas fa-pepper-hot mr-1"></i>スパイシー
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm" data-taste="ドライ">
+                    <i class="fas fa-wind mr-1"></i>ドライ
+                </button>
+                <button class="taste-filter px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-sm" data-taste="まろやか">
+                    <i class="fas fa-cloud mr-1"></i>まろやか
+                </button>
+            </div>
         </section>
 
         <!-- 検索結果表示エリア -->
@@ -546,17 +574,77 @@
             displayResults(recommendations);
         }
 
+        // 味の特徴の定義
+        const TASTE_CHARACTERISTICS = {
+            '甘口': { icon: 'candy-cane', color: 'pink' },
+            '辛口': { icon: 'pepper-hot', color: 'red' },
+            '苦味': { icon: 'coffee', color: 'yellow' },
+            '酸味': { icon: 'lemon', color: 'green' },
+            'フルティー': { icon: 'apple-alt', color: 'purple' },
+            'スパイシー': { icon: 'pepper-hot', color: 'orange' },
+            'ドライ': { icon: 'wind', color: 'blue' },
+            'まろやか': { icon: 'cloud', color: 'indigo' }
+        };
+
+        // 味の特徴フィルターの処理
+        let activeTasteFilters = new Set();
+
+        function initializeTasteFilters() {
+            document.querySelectorAll('.taste-filter').forEach(button => {
+                button.addEventListener('click', () => {
+                    const taste = button.dataset.taste;
+                    if (activeTasteFilters.has(taste)) {
+                        activeTasteFilters.delete(taste);
+                        button.classList.remove('ring-2', 'ring-offset-2');
+                    } else {
+                        activeTasteFilters.add(taste);
+                        button.classList.add('ring-2', 'ring-offset-2');
+                    }
+                    updateSearchResults();
+                });
+            });
+        }
+
+        function updateSearchResults() {
+            const query = searchInput.value.trim();
+            if (query) {
+                performSearch(query);
+            } else if (activeTasteFilters.size > 0) {
+                filterByTaste();
+            } else {
+                showSearchHistory();
+            }
+        }
+
+        function filterByTaste() {
+            if (activeTasteFilters.size === 0) {
+                showSearchHistory();
+                return;
+            }
+
+            const filteredResults = alcoholData.filter(item => {
+                if (!item.taste) return false;
+                return Array.from(activeTasteFilters).every(taste => 
+                    item.taste.includes(taste)
+                );
+            });
+
+            displayResults(filteredResults);
+        }
+
         // 検索結果の表示
         function displayResults(results) {
             const resultsContainer = searchResults.querySelector('.grid');
-            if (!resultsContainer.querySelector('h3')) { // ヘッダーがない場合のみクリア
+            if (!resultsContainer.querySelector('h3')) {
                 resultsContainer.innerHTML = '';
             }
 
             if (results.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="col-span-full text-center py-8 text-gray-500">
-                        検索結果が見つかりませんでした。
+                        ${activeTasteFilters.size > 0 
+                            ? '選択した味の特徴に一致するお酒が見つかりませんでした。'
+                            : '検索結果が見つかりませんでした。'}
                     </div>
                 `;
                 return;
@@ -566,6 +654,17 @@
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow';
                 
+                // 味の特徴の表示を改善
+                const tasteHtml = item.taste ? item.taste.map(taste => {
+                    const tasteInfo = TASTE_CHARACTERISTICS[taste] || { icon: 'circle', color: 'gray' };
+                    return `
+                        <span class="px-2 py-1 text-xs rounded-full bg-${tasteInfo.color}-50 text-${tasteInfo.color}-600 flex items-center gap-1">
+                            <i class="fas fa-${tasteInfo.icon}"></i>
+                            ${taste}
+                        </span>
+                    `;
+                }).join('') : '';
+
                 // 評価コンポーネントのHTML
                 const ratingHtml = `
                     <div class="mt-3 flex items-center justify-between">
@@ -602,11 +701,7 @@
                         <span>度数: ${item.alcoholContent}%</span>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-2">
-                        ${item.taste ? item.taste.map(t => `
-                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                                ${t}
-                            </span>
-                        `).join('') : ''}
+                        ${tasteHtml}
                     </div>
                     <div class="mt-2 text-sm text-gray-500">
                         <span>${item.priceRange}</span>
@@ -661,6 +756,7 @@
         // 初期データの読み込み
         loadAlcoholData().then(() => {
             updateCurrentDisplay();
+            initializeTasteFilters();
         });
     </script>
   </body>
