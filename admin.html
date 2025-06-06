@@ -116,32 +116,50 @@
 
         // ログイン処理
         loginButton.addEventListener('click', async () => {
-            const token = document.getElementById('githubToken').value;
+            const token = document.getElementById('githubToken').value.trim();
             const loginError = document.getElementById('loginError');
             loginError.classList.add('hidden');
             loginButton.disabled = true;
             loginButton.textContent = '認証中...';
 
             console.log('ログイン処理を開始します...');
+            console.log('トークンの長さ:', token.length);
+
+            if (!token) {
+                loginError.textContent = 'トークンを入力してください';
+                loginError.classList.remove('hidden');
+                loginButton.disabled = false;
+                loginButton.textContent = 'ログイン';
+                return;
+            }
 
             try {
                 // GitHub APIで認証テスト
                 console.log('GitHub APIに認証リクエストを送信します...');
                 const response = await fetch(`${GITHUB_API_URL}/user`, {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'AlNavi-Admin'
                     }
                 });
 
                 console.log('認証レスポンス:', {
                     status: response.status,
                     statusText: response.statusText,
-                    ok: response.ok
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
                 });
 
-                const responseData = await response.json();
-                console.log('認証レスポンスデータ:', responseData);
+                let responseData;
+                try {
+                    responseData = await response.json();
+                    console.log('認証レスポンスデータ:', responseData);
+                } catch (e) {
+                    console.error('レスポンスのJSON解析に失敗:', e);
+                    throw new Error('サーバーからの応答を解析できませんでした');
+                }
 
                 if (response.ok) {
                     console.log('ユーザー認証成功:', responseData.login);
@@ -151,9 +169,11 @@
                     const repoResponse = await fetch(
                         `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}`,
                         {
+                            method: 'GET',
                             headers: {
-                                'Authorization': `token ${token}`,
-                                'Accept': 'application/vnd.github.v3+json'
+                                'Authorization': `Bearer ${token}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'User-Agent': 'AlNavi-Admin'
                             }
                         }
                     );
@@ -161,27 +181,39 @@
                     console.log('リポジトリレスポンス:', {
                         status: repoResponse.status,
                         statusText: repoResponse.statusText,
-                        ok: repoResponse.ok
+                        ok: repoResponse.ok,
+                        headers: Object.fromEntries(repoResponse.headers.entries())
                     });
 
                     if (repoResponse.ok) {
                         const repoData = await repoResponse.json();
                         console.log('リポジトリアクセス成功:', repoData.full_name);
                         
-                        githubToken = token;
-                        localStorage.setItem('githubToken', token);
-                        console.log('トークンを保存しました');
-                        
-                        checkLoginStatus();
-                        console.log('ログイン状態を更新しました');
+                        // トークンを保存する前に、有効なトークンであることを確認
+                        if (responseData.login && repoData.full_name) {
+                            githubToken = token;
+                            localStorage.setItem('githubToken', token);
+                            console.log('トークンを保存しました');
+                            
+                            checkLoginStatus();
+                            console.log('ログイン状態を更新しました');
+                        } else {
+                            throw new Error('トークンの検証に失敗しました');
+                        }
                     } else {
-                        const repoError = await repoResponse.json();
+                        const repoError = await repoResponse.json().catch(() => ({}));
                         console.error('リポジトリアクセスエラー:', repoError);
-                        throw new Error('リポジトリへのアクセス権限がありません。トークンにrepo権限が必要です。');
+                        throw new Error(
+                            repoError.message || 
+                            'リポジトリへのアクセス権限がありません。トークンにrepo権限が必要です。'
+                        );
                     }
                 } else {
                     console.error('認証エラー:', responseData);
-                    throw new Error(responseData.message || '認証に失敗しました');
+                    throw new Error(
+                        responseData.message || 
+                        `認証に失敗しました (${response.status}: ${response.statusText})`
+                    );
                 }
             } catch (error) {
                 console.error('ログインエラーの詳細:', error);
@@ -205,15 +237,19 @@
                 
                 // トークンの有効性を確認
                 fetch(`${GITHUB_API_URL}/user`, {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'AlNavi-Admin'
                     }
                 })
                 .then(response => {
                     console.log('トークン検証レスポンス:', {
                         status: response.status,
-                        ok: response.ok
+                        statusText: response.statusText,
+                        ok: response.ok,
+                        headers: Object.fromEntries(response.headers.entries())
                     });
                     
                     if (response.ok) {
