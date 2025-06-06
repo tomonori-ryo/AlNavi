@@ -96,17 +96,44 @@
                 console.log('Loaded data:', data);
                 
                 alcoholData = data.alcohols;
+                
+                // データが空の場合
+                if (!alcoholData || alcoholData.length === 0) {
+                    showNoDataMessage();
+                    return;
+                }
+                
                 // 初期表示（人気順）
                 const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
                 displayResults(popularItems);
             } catch (error) {
                 console.error('Error loading data:', error);
-                searchResults.querySelector('.grid').innerHTML = `
-                    <div class="col-span-full text-center py-8 text-gray-500">
-                        データの読み込みに失敗しました。<br>
-                        エラー: ${error.message}
+                showNoDataMessage();
+            }
+        }
+
+        // データがない場合のメッセージ表示
+        function showNoDataMessage() {
+            const resultsContainer = searchResults.querySelector('.grid');
+            resultsContainer.innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <div class="text-gray-500 mb-4">
+                        <i class="fas fa-wine-glass-alt text-4xl mb-4 text-gray-400"></i>
+                        <p class="text-lg">データがまだありません。</p>
                     </div>
-                `;
+                    <button onclick="confirmAddNewData()" 
+                        class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        新しいデータを追加する
+                    </button>
+                </div>
+            `;
+            searchResults.classList.remove('hidden');
+        }
+
+        // 新しいデータ追加の確認
+        function confirmAddNewData() {
+            if (confirm('新しいお酒のデータを追加しますか？')) {
+                window.location.href = 'submit.html';
             }
         }
 
@@ -118,6 +145,12 @@
         function performSearch(query) {
             console.log('Performing search with query:', query);
             console.log('Current alcoholData:', alcoholData);
+            
+            // データが空の場合
+            if (!alcoholData || alcoholData.length === 0) {
+                showNoDataMessage();
+                return;
+            }
             
             if (!query.trim()) {
                 // 検索クエリが空の場合は人気順で表示
