@@ -26,16 +26,24 @@
     <main class="flex-grow container mx-auto px-4 py-8">
         <!-- 検索セクション -->
         <section class="max-w-2xl mx-auto">
-            <!-- 検索ボックス -->
-            <div class="relative">
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="お酒の名前、種類、特徴で検索..."
-                    class="w-full p-4 pl-12 rounded-full border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                />
-                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
+            <!-- 検索フォーム -->
+            <form id="searchForm" class="relative" onsubmit="handleSearch(event)">
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="お酒の名前、種類、特徴で検索..."
+                        class="w-full p-4 pl-12 pr-12 rounded-full border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    />
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <button
+                        type="submit"
+                        class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
 
             <!-- 検索タイプ選択 -->
             <div class="mt-6 flex flex-wrap justify-center gap-3">
@@ -310,9 +318,17 @@
             searchResults.classList.remove('hidden');
         }
 
-        // イベントリスナーの設定
+        // 検索フォームの処理
+        function handleSearch(event) {
+            event.preventDefault(); // フォームのデフォルト送信を防止
+            const query = searchInput.value.trim();
+            performSearch(query);
+        }
+
+        // 既存のイベントリスナーを更新
         searchInput.addEventListener('input', (e) => {
-            performSearch(e.target.value);
+            // 入力中の検索は維持（オプション）
+            // performSearch(e.target.value);
         });
 
         // 検索履歴ボタンのイベントリスナー
