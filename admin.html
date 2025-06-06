@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AlNavi - 管理者ダッシュボード</title>
+    <title>AlNavi - 管理者ページ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
@@ -11,64 +11,55 @@
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold text-gray-800 flex items-center">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
                 <i class="fas fa-wine-glass-alt text-red-600 mr-2"></i>
-                AlNavi
-            </a>
-            <nav class="flex gap-4">
-                <a href="index.html" class="text-sm text-gray-600 hover:text-red-600 transition-colors">サイトに戻る</a>
+                AlNavi 管理者ページ
+            </h1>
+            <nav class="flex gap-4 items-center">
+                <span id="adminEmail" class="text-sm text-gray-600"></span>
                 <button id="logoutButton" class="text-sm text-red-600 hover:text-red-800 transition-colors hidden">
                     ログアウト
                 </button>
+                <a href="index.html" class="text-sm text-gray-600 hover:text-red-600 transition-colors">サイトに戻る</a>
             </nav>
         </div>
     </header>
 
-    <!-- メインコンテンツ -->
-    <main class="container mx-auto px-4 py-8">
-        <!-- ログインフォーム -->
-        <div id="loginForm" class="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6">
-            <h1 class="text-2xl font-bold text-gray-800 mb-6">管理者ログイン</h1>
-            <div class="space-y-4">
+    <!-- ログインフォーム -->
+    <div id="loginForm" class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">管理者ログイン</h2>
+            <form id="adminLoginForm" class="space-y-4">
                 <div>
-                    <label for="githubToken" class="block text-sm font-medium text-gray-700 mb-1">GitHubアクセストークン</label>
-                    <input type="password" id="githubToken" required
-                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        placeholder="GitHub Personal Access Token">
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">GitHubユーザー名</label>
+                    <input type="text" id="username" required
+                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="token" class="block text-sm font-medium text-gray-700 mb-1">GitHubアクセストークン</label>
+                    <input type="password" id="token" required
+                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
                     <p class="mt-1 text-sm text-gray-500">
                         <a href="https://github.com/settings/tokens" target="_blank" class="text-red-600 hover:text-red-800">
                             GitHubアクセストークンの取得方法
                         </a>
                     </p>
-                    <p class="mt-1 text-sm text-gray-500">
-                        必要な権限: <code class="bg-gray-100 px-1 rounded">repo</code>
-                    </p>
                 </div>
-                <div id="loginError" class="hidden text-sm text-red-600"></div>
-                <button id="loginButton" 
+                <button type="submit"
                     class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
                     ログイン
                 </button>
-            </div>
+            </form>
         </div>
+    </div>
 
-        <!-- 管理者ダッシュボード -->
-        <div id="adminDashboard" class="max-w-4xl mx-auto hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">管理者ダッシュボード</h1>
-                <div class="flex gap-4">
-                    <button id="refreshButton" class="text-sm text-gray-600 hover:text-gray-800 transition-colors">
-                        <i class="fas fa-sync-alt mr-1"></i>更新
-                    </button>
-                </div>
-            </div>
-
-            <!-- 提出データ一覧 -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-medium text-gray-800 mb-4">提出されたデータ</h2>
-                <div id="submissionsList" class="space-y-4">
-                    <!-- 提出データがここに動的に追加されます -->
-                </div>
+    <!-- メインコンテンツ（ログイン後に表示） -->
+    <main id="adminContent" class="container mx-auto px-4 py-8 hidden">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">承認待ちの投稿</h2>
+            
+            <div id="pendingSubmissions" class="space-y-4">
+                <!-- 投稿はJavaScriptで動的に追加 -->
             </div>
         </div>
     </main>
@@ -80,394 +71,287 @@
         const REPO_NAME = 'AlNavi';
         let githubToken = '';
 
-        // DOM要素
-        const loginForm = document.getElementById('loginForm');
-        const adminDashboard = document.getElementById('adminDashboard');
-        const loginButton = document.getElementById('loginButton');
-        const logoutButton = document.getElementById('logoutButton');
-        const refreshButton = document.getElementById('refreshButton');
-        const submissionsList = document.getElementById('submissionsList');
+        // 認証状態の管理
+        let isAuthenticated = false;
 
-        // ログインフォームのHTMLを更新
-        loginForm.innerHTML = `
-            <h1 class="text-2xl font-bold text-gray-800 mb-6">管理者ログイン</h1>
-            <div class="space-y-4">
-                <div>
-                    <label for="githubToken" class="block text-sm font-medium text-gray-700 mb-1">GitHubアクセストークン</label>
-                    <input type="password" id="githubToken" required
-                        class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        placeholder="GitHub Personal Access Token">
-                    <p class="mt-1 text-sm text-gray-500">
-                        <a href="https://github.com/settings/tokens" target="_blank" class="text-red-600 hover:text-red-800">
-                            GitHubアクセストークンの取得方法
-                        </a>
-                    </p>
-                    <p class="mt-1 text-sm text-gray-500">
-                        必要な権限: <code class="bg-gray-100 px-1 rounded">repo</code>
-                    </p>
-                </div>
-                <div id="loginError" class="hidden text-sm text-red-600"></div>
-                <button id="loginButton" 
-                    class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
-                    ログイン
-                </button>
-            </div>
-        `;
-
-        // ログイン処理
-        loginButton.addEventListener('click', async () => {
-            const token = document.getElementById('githubToken').value.trim();
-            const loginError = document.getElementById('loginError');
-            loginError.classList.add('hidden');
-            loginButton.disabled = true;
-            loginButton.textContent = '認証中...';
-
-            console.log('ログイン処理を開始します...');
-            console.log('トークンの長さ:', token.length);
-
-            if (!token) {
-                loginError.textContent = 'トークンを入力してください';
-                loginError.classList.remove('hidden');
-                loginButton.disabled = false;
-                loginButton.textContent = 'ログイン';
-                return;
-            }
+        // ログインフォームの処理
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const token = document.getElementById('token').value;
 
             try {
+                console.log('Attempting to authenticate with GitHub...');
                 // GitHub APIで認証テスト
-                console.log('GitHub APIに認証リクエストを送信します...');
                 const response = await fetch(`${GITHUB_API_URL}/user`, {
-                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'AlNavi-Admin'
+                        'Accept': 'application/vnd.github.v3+json'
                     }
                 });
 
-                console.log('認証レスポンス:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    ok: response.ok,
-                    headers: Object.fromEntries(response.headers.entries())
-                });
-
-                let responseData;
-                try {
-                    responseData = await response.json();
-                    console.log('認証レスポンスデータ:', responseData);
-                } catch (e) {
-                    console.error('レスポンスのJSON解析に失敗:', e);
-                    throw new Error('サーバーからの応答を解析できませんでした');
-                }
-
+                console.log('GitHub API response status:', response.status);
+                
                 if (response.ok) {
-                    console.log('ユーザー認証成功:', responseData.login);
+                    const userData = await response.json();
+                    console.log('GitHub user data:', userData);
                     
-                    // リポジトリへのアクセス権限を確認
-                    console.log('リポジトリアクセス権限を確認します...');
-                    const repoResponse = await fetch(
-                        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}`,
-                        {
-                            method: 'GET',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Accept': 'application/vnd.github.v3+json',
-                                'User-Agent': 'AlNavi-Admin'
-                            }
-                        }
-                    );
-
-                    console.log('リポジトリレスポンス:', {
-                        status: repoResponse.status,
-                        statusText: repoResponse.statusText,
-                        ok: repoResponse.ok,
-                        headers: Object.fromEntries(repoResponse.headers.entries())
-                    });
-
-                    if (repoResponse.ok) {
-                        const repoData = await repoResponse.json();
-                        console.log('リポジトリアクセス成功:', repoData.full_name);
+                    if (userData.login === username) {
+                        console.log('Authentication successful');
+                        githubToken = token;
+                        isAuthenticated = true;
+                        document.getElementById('loginForm').classList.add('hidden');
+                        document.getElementById('adminContent').classList.remove('hidden');
+                        document.getElementById('logoutButton').classList.remove('hidden');
+                        document.getElementById('adminEmail').textContent = username;
                         
-                        // トークンを保存する前に、有効なトークンであることを確認
-                        if (responseData.login && repoData.full_name) {
-                            githubToken = token;
-                            localStorage.setItem('githubToken', token);
-                            console.log('トークンを保存しました');
-                            
-                            checkLoginStatus();
-                            console.log('ログイン状態を更新しました');
-                        } else {
-                            throw new Error('トークンの検証に失敗しました');
-                        }
+                        // 投稿一覧の取得
+                        loadPendingSubmissions();
                     } else {
-                        const repoError = await repoResponse.json().catch(() => ({}));
-                        console.error('リポジトリアクセスエラー:', repoError);
-                        throw new Error(
-                            repoError.message || 
-                            'リポジトリへのアクセス権限がありません。トークンにrepo権限が必要です。'
-                        );
+                        console.error('Username mismatch:', userData.login, '!=', username);
+                        throw new Error('ユーザー名が一致しません');
                     }
                 } else {
-                    console.error('認証エラー:', responseData);
-                    throw new Error(
-                        responseData.message || 
-                        `認証に失敗しました (${response.status}: ${response.statusText})`
-                    );
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('GitHub API error:', errorData);
+                    throw new Error(`認証に失敗しました: ${errorData.message || response.statusText}`);
                 }
             } catch (error) {
-                console.error('ログインエラーの詳細:', error);
-                loginError.textContent = `エラー: ${error.message}`;
-                loginError.classList.remove('hidden');
-            } finally {
-                loginButton.disabled = false;
-                loginButton.textContent = 'ログイン';
+                console.error('Login error:', error);
+                alert(`ログインに失敗しました: ${error.message}\n\nユーザー名とアクセストークンを確認してください。`);
             }
         });
-
-        // ログイン状態の管理
-        function checkLoginStatus() {
-            console.log('ログイン状態を確認します...');
-            const token = localStorage.getItem('githubToken');
-            console.log('保存されたトークン:', token ? 'あり' : 'なし');
-
-            if (token) {
-                githubToken = token;
-                console.log('トークンを設定しました');
-                
-                // トークンの有効性を確認
-                fetch(`${GITHUB_API_URL}/user`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'AlNavi-Admin'
-                    }
-                })
-                .then(response => {
-                    console.log('トークン検証レスポンス:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        ok: response.ok,
-                        headers: Object.fromEntries(response.headers.entries())
-                    });
-                    
-                    if (response.ok) {
-                        loginForm.classList.add('hidden');
-                        adminDashboard.classList.remove('hidden');
-                        logoutButton.classList.remove('hidden');
-                        console.log('ダッシュボードを表示します');
-                        loadSubmissions();
-                    } else {
-                        console.log('トークンが無効です。ログアウトします。');
-                        localStorage.removeItem('githubToken');
-                        loginForm.classList.remove('hidden');
-                        adminDashboard.classList.add('hidden');
-                        logoutButton.classList.add('hidden');
-                    }
-                })
-                .catch(error => {
-                    console.error('トークン検証エラー:', error);
-                    localStorage.removeItem('githubToken');
-                    loginForm.classList.remove('hidden');
-                    adminDashboard.classList.add('hidden');
-                    logoutButton.classList.add('hidden');
-                });
-            } else {
-                console.log('トークンがありません。ログインフォームを表示します。');
-                loginForm.classList.remove('hidden');
-                adminDashboard.classList.add('hidden');
-                logoutButton.classList.add('hidden');
-            }
-        }
 
         // ログアウト処理
-        logoutButton.addEventListener('click', () => {
-            if (confirm('ログアウトしますか？')) {
-                githubToken = '';
-                localStorage.removeItem('githubToken');
-                checkLoginStatus();
-            }
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            githubToken = '';
+            isAuthenticated = false;
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('adminContent').classList.add('hidden');
+            document.getElementById('logoutButton').classList.add('hidden');
+            document.getElementById('adminEmail').textContent = '';
+            document.getElementById('adminLoginForm').reset();
         });
 
-        // 提出データの読み込み
-        async function loadSubmissions() {
+        // 承認待ちの投稿を取得
+        async function loadPendingSubmissions() {
+            if (!isAuthenticated) return;
+
             try {
+                console.log('Fetching pending submissions...');
+                // GitHubからsubmissions.jsonを取得
                 const response = await fetch(
                     `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
                     {
                         headers: {
-                            'Authorization': `token ${githubToken}`,
+                            'Authorization': `Bearer ${githubToken}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     }
                 );
 
-                if (!response.ok) {
-                    throw new Error('データの取得に失敗しました');
-                }
+                console.log('Submissions fetch response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Submissions data:', data);
+                    
+                    const content = JSON.parse(atob(data.content));
+                    const pendingSubmissions = content.submissions.filter(s => s.status === 'pending');
+                    console.log('Pending submissions:', pendingSubmissions);
 
-                const data = await response.json();
-                const content = JSON.parse(atob(data.content));
-                displaySubmissions(content.submissions);
+                    const container = document.getElementById('pendingSubmissions');
+                    container.innerHTML = '';
+
+                    if (pendingSubmissions.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-8 text-gray-600">
+                                承認待ちの投稿はありません
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    pendingSubmissions.forEach(submission => {
+                        const submissionElement = document.createElement('div');
+                        submissionElement.className = 'bg-white rounded-lg shadow-sm p-6';
+                        submissionElement.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-800">${submission.name}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">${submission.type}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="approveSubmission('${submission.id}')" 
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                        承認
+                                    </button>
+                                    <button onclick="rejectSubmission('${submission.id}')"
+                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                        却下
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-gray-700">${submission.description}</p>
+                            ${submission.imageUrl ? `
+                                <img src="${submission.imageUrl}" alt="${submission.name}" class="mt-4 max-w-xs rounded-lg">
+                            ` : ''}
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                ${submission.taste.map(t => `
+                                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+                                        ${t}
+                                    </span>
+                                `).join('')}
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">
+                                投稿日時: ${new Date(submission.submittedAt).toLocaleString()}
+                            </p>
+                        `;
+                        container.appendChild(submissionElement);
+                    });
+                }
             } catch (error) {
-                console.error('Error loading submissions:', error);
-                submissionsList.innerHTML = `
-                    <div class="text-center text-gray-500 py-4">
-                        データの読み込みに失敗しました。<br>
-                        ${error.message}
-                    </div>
-                `;
+                console.error('Error:', error);
+                alert('投稿の取得に失敗しました。');
             }
         }
 
-        // ファイルの更新
-        async function updateFile(path, content, message) {
-            try {
-                // 現在のファイルの内容を取得
-                const response = await fetch(
-                    `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
-                    {
-                        headers: {
-                            'Authorization': `token ${githubToken}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    }
-                );
+        // 投稿を承認
+        async function approveSubmission(id) {
+            if (!isAuthenticated) return;
 
-                if (!response.ok) {
+            try {
+                // 現在のsubmissions.jsonとalcohols.jsonを取得
+                const [submissionsResponse, alcoholsResponse] = await Promise.all([
+                    fetch(`${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`, {
+                        headers: { 'Authorization': `token ${githubToken}` }
+                    }),
+                    fetch(`${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/alcohols.json`, {
+                        headers: { 'Authorization': `token ${githubToken}` }
+                    })
+                ]);
+
+                if (!submissionsResponse.ok || !alcoholsResponse.ok) {
                     throw new Error('ファイルの取得に失敗しました');
                 }
 
-                const fileData = await response.json();
-                const sha = fileData.sha;
+                const submissionsData = await submissionsResponse.json();
+                const alcoholsData = await alcoholsResponse.json();
 
-                // ファイルを更新
-                const updateResponse = await fetch(
-                    `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
-                    {
+                const submissions = JSON.parse(atob(submissionsData.content));
+                const alcohols = JSON.parse(atob(alcoholsData.content));
+
+                // 承認する投稿を探す
+                const submissionIndex = submissions.submissions.findIndex(s => s.id === id);
+                if (submissionIndex === -1) {
+                    throw new Error('投稿が見つかりません');
+                }
+
+                const submission = submissions.submissions[submissionIndex];
+                submission.status = 'approved';
+                submission.approvedAt = new Date().toISOString();
+                submission.approvedBy = document.getElementById('adminEmail').textContent;
+
+                // alcohols.jsonに追加
+                alcohols.alcohols.push(submission);
+
+                // submissions.jsonから削除
+                submissions.submissions.splice(submissionIndex, 1);
+
+                // 変更をコミット
+                const commitMessage = `Approve submission: ${submission.name}`;
+                const commitData = {
+                    message: commitMessage,
+                    content: btoa(JSON.stringify(submissions, null, 2)),
+                    sha: submissionsData.sha
+                };
+
+                await fetch(`${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(commitData)
+                });
+
+                // alcohols.jsonも更新
+                const alcoholsCommitData = {
+                    message: commitMessage,
+                    content: btoa(JSON.stringify(alcohols, null, 2)),
+                    sha: alcoholsData.sha
+                };
+
+                await fetch(`${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/alcohols.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(alcoholsCommitData)
+                });
+
+                alert('投稿を承認しました。');
+                loadPendingSubmissions();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('エラーが発生しました。');
+            }
+        }
+
+        // 投稿を却下
+        async function rejectSubmission(id) {
+            if (!isAuthenticated) return;
+
+            if (confirm('この投稿を却下してもよろしいですか？')) {
+                try {
+                    // 現在のsubmissions.jsonを取得
+                    const response = await fetch(
+                        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
+                        {
+                            headers: { 'Authorization': `token ${githubToken}` }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('ファイルの取得に失敗しました');
+                    }
+
+                    const data = await response.json();
+                    const submissions = JSON.parse(atob(data.content));
+
+                    // 却下する投稿を探して削除
+                    const submissionIndex = submissions.submissions.findIndex(s => s.id === id);
+                    if (submissionIndex === -1) {
+                        throw new Error('投稿が見つかりません');
+                    }
+
+                    submissions.submissions.splice(submissionIndex, 1);
+
+                    // 変更をコミット
+                    const commitData = {
+                        message: `Reject submission: ${id}`,
+                        content: btoa(JSON.stringify(submissions, null, 2)),
+                        sha: data.sha
+                    };
+
+                    await fetch(`${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`, {
                         method: 'PUT',
                         headers: {
                             'Authorization': `token ${githubToken}`,
-                            'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            message: message,
-                            content: btoa(JSON.stringify(content, null, 2)),
-                            sha: sha
-                        })
-                    }
-                );
+                        body: JSON.stringify(commitData)
+                    });
 
-                if (!updateResponse.ok) {
-                    const errorData = await updateResponse.json();
-                    throw new Error(errorData.message || 'ファイルの更新に失敗しました');
+                    alert('投稿を却下しました。');
+                    loadPendingSubmissions();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました。');
                 }
-
-                return true;
-            } catch (error) {
-                console.error('Error updating file:', error);
-                throw error;
             }
         }
-
-        // 提出データの処理（承認/却下）
-        async function handleSubmission(id, action) {
-            if (!confirm(`このデータを${action === 'approve' ? '承認' : '却下'}しますか？`)) {
-                return;
-            }
-
-            try {
-                // submissions.jsonを取得
-                const submissionsResponse = await fetch(
-                    `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/submissions.json`,
-                    {
-                        headers: {
-                            'Authorization': `token ${githubToken}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    }
-                );
-
-                if (!submissionsResponse.ok) {
-                    throw new Error('提出データの取得に失敗しました');
-                }
-
-                const submissionsData = await submissionsResponse.json();
-                const submissions = JSON.parse(atob(submissionsData.content));
-                
-                const submission = submissions.submissions.find(s => s.id === id);
-                if (!submission) {
-                    throw new Error('提出データが見つかりません。');
-                }
-
-                if (action === 'approve') {
-                    // alcohols.jsonを取得
-                    const alcoholsResponse = await fetch(
-                        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/alcohols.json`,
-                        {
-                            headers: {
-                                'Authorization': `token ${githubToken}`,
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        }
-                    );
-
-                    if (!alcoholsResponse.ok) {
-                        throw new Error('お酒データの取得に失敗しました');
-                    }
-
-                    const alcoholsData = await alcoholsResponse.json();
-                    const alcohols = JSON.parse(atob(alcoholsData.content));
-
-                    // 新しいお酒データを作成
-                    const newAlcohol = {
-                        ...submission,
-                        status: 'approved',
-                        approvedAt: new Date().toISOString()
-                    };
-                    delete newAlcohol.id;
-
-                    // alcohols.jsonを更新
-                    alcohols.alcohols.push(newAlcohol);
-                    await updateFile(
-                        'data/alcohols.json',
-                        alcohols,
-                        `Approve submission: ${submission.name}`
-                    );
-
-                    // 提出データのステータスを更新
-                    submission.status = 'approved';
-                    submission.approvedAt = new Date().toISOString();
-                } else {
-                    submission.status = 'rejected';
-                    submission.rejectedAt = new Date().toISOString();
-                }
-
-                // submissions.jsonを更新
-                await updateFile(
-                    'data/submissions.json',
-                    submissions,
-                    `${action === 'approve' ? 'Approve' : 'Reject'} submission: ${submission.name}`
-                );
-
-                // 更新されたデータを表示
-                displaySubmissions(submissions.submissions);
-                
-                alert(`データを${action === 'approve' ? '承認' : '却下'}しました。`);
-
-            } catch (error) {
-                console.error('Error handling submission:', error);
-                alert(`エラーが発生しました: ${error.message}`);
-            }
-        }
-
-        // 更新ボタンのイベントリスナー
-        refreshButton.addEventListener('click', loadSubmissions);
-
-        // 初期表示
-        checkLoginStatus();
     </script>
 </body>
 </html> 
