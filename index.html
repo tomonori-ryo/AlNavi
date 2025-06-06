@@ -79,6 +79,88 @@
     <script>
         // データの取得と検索機能
         let alcoholData = [];
+        const MAX_HISTORY_ITEMS = 10; // 最大履歴数
+
+        // 検索履歴の管理
+        function getSearchHistory() {
+            const history = localStorage.getItem('searchHistory');
+            return history ? JSON.parse(history) : [];
+        }
+
+        function addToSearchHistory(query) {
+            if (!query.trim()) return;
+            
+            let history = getSearchHistory();
+            // 同じクエリが既にある場合は削除
+            history = history.filter(item => item.query !== query);
+            // 新しいクエリを先頭に追加
+            history.unshift({
+                query: query,
+                timestamp: new Date().toISOString()
+            });
+            // 最大履歴数を超える場合は古いものを削除
+            if (history.length > MAX_HISTORY_ITEMS) {
+                history = history.slice(0, MAX_HISTORY_ITEMS);
+            }
+            localStorage.setItem('searchHistory', JSON.stringify(history));
+        }
+
+        function clearSearchHistory() {
+            localStorage.removeItem('searchHistory');
+            showSearchHistory();
+        }
+
+        // 検索履歴の表示
+        function showSearchHistory() {
+            const history = getSearchHistory();
+            const resultsContainer = searchResults.querySelector('.grid');
+            resultsContainer.innerHTML = '';
+
+            if (history.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        検索履歴はありません
+                    </div>
+                `;
+                return;
+            }
+
+            // 履歴ヘッダー
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'col-span-full flex justify-between items-center mb-4';
+            headerDiv.innerHTML = `
+                <h3 class="text-lg font-medium text-gray-800">検索履歴</h3>
+                <button onclick="clearSearchHistory()" 
+                    class="text-sm text-red-600 hover:text-red-800 transition-colors">
+                    履歴をクリア
+                </button>
+            `;
+            resultsContainer.appendChild(headerDiv);
+
+            // 履歴アイテム
+            history.forEach(item => {
+                const historyElement = document.createElement('div');
+                historyElement.className = 'bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer';
+                historyElement.onclick = () => {
+                    searchInput.value = item.query;
+                    performSearch(item.query);
+                };
+                historyElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-history text-gray-400 mr-2"></i>
+                            <span class="text-gray-800">${item.query}</span>
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            ${new Date(item.timestamp).toLocaleString()}
+                        </span>
+                    </div>
+                `;
+                resultsContainer.appendChild(historyElement);
+            });
+
+            searchResults.classList.remove('hidden');
+        }
 
         // データの読み込み
         async function loadAlcoholData() {
@@ -103,9 +185,8 @@
                     return;
                 }
                 
-                // 初期表示（人気順）
-                const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                displayResults(popularItems);
+                // 初期表示（検索履歴）
+                showSearchHistory();
             } catch (error) {
                 console.error('Error loading data:', error);
                 showNoDataMessage();
@@ -153,11 +234,13 @@
             }
             
             if (!query.trim()) {
-                // 検索クエリが空の場合は人気順で表示
-                const popularItems = [...alcoholData].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-                displayResults(popularItems);
+                // 検索クエリが空の場合は検索履歴を表示
+                showSearchHistory();
                 return;
             }
+
+            // 検索履歴に追加
+            addToSearchHistory(query);
 
             const searchQuery = query.toLowerCase();
             const filteredResults = alcoholData.filter(item => {
@@ -168,13 +251,11 @@
                     item.origin,
                     item.taste ? item.taste.join(' ') : '',
                     item.priceRange
-                ].filter(Boolean); // nullやundefinedを除外
+                ].filter(Boolean);
 
-                const matches = searchableFields.some(field => 
+                return searchableFields.some(field => 
                     field.toLowerCase().includes(searchQuery)
                 );
-                console.log('Searching item:', item.name, 'Matches:', matches);
-                return matches;
             });
 
             console.log('Filtered results:', filteredResults);
@@ -233,6 +314,11 @@
         // イベントリスナーの設定
         searchInput.addEventListener('input', (e) => {
             performSearch(e.target.value);
+        });
+
+        // 検索履歴ボタンのイベントリスナー
+        document.querySelector('button:has(.fa-history)').addEventListener('click', () => {
+            showSearchHistory();
         });
 
         // 初期データの読み込み
