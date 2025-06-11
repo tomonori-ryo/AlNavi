@@ -8,143 +8,171 @@
     <script type="module">
         import { config, initializeConfig } from './config.js';
         import { dataManager } from './data.js';
-
-        // 設定の初期化
-        if (!initializeConfig()) {
-            alert('設定の初期化に失敗しました。管理者に連絡してください。');
+        import { db } from './firebase-config.js';
+    </script>
+    <style>
+        /* 既存のスタイル */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
 
-        // グローバル変数として設定
-        window.config = config;
-        window.dataManager = dataManager;
-    </script>
+        /* フォーム要素のスタイル改善 */
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: white;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+            outline: none;
+        }
+
+        /* 必須項目のアスタリスク */
+        .required::after {
+            content: " *";
+            color: #ff4444;
+        }
+
+        /* 必須項目の説明 */
+        .required-note {
+            color: #ff4444;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* 送信ボタンのスタイル改善 */
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        /* フォームグループのスタイル */
+        .form-group {
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* ラベルのスタイル */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* エラーメッセージのスタイル */
+        .error-message {
+            color: #ff4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-2xl mx-auto">
             <h1 class="text-3xl font-bold text-gray-800 mb-8">お酒の情報提供</h1>
 
-            <form id="submitForm" class="bg-white rounded-lg shadow-md p-6 space-y-6">
-                <!-- お酒の名前 -->
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">お酒の名前</label>
-                    <input type="text" id="name" name="name" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <!-- お酒の種類 -->
-                <div>
-                    <label for="type" class="block text-sm font-medium text-gray-700">お酒の種類</label>
-                    <select id="type" name="type" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">選択してください</option>
-                        <option value="ビール">ビール</option>
-                        <option value="ワイン">ワイン</option>
-                        <option value="日本酒">日本酒</option>
-                        <option value="ウイスキー">ウイスキー</option>
-                        <option value="焼酎">焼酎</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-
-                <!-- 説明 -->
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">説明</label>
-                    <textarea id="description" name="description" rows="3" required
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
-                </div>
-
-                <!-- 味の特徴 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">味の特徴</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="inline-flex items-center" for="taste-sweet">
-                            <input type="checkbox" id="taste-sweet" name="taste" value="甘口" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">甘口</span>
-                        </label>
-                        <label class="inline-flex items-center" for="taste-dry">
-                            <input type="checkbox" id="taste-dry" name="taste" value="辛口" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">辛口</span>
-                        </label>
-                        <label class="inline-flex items-center" for="taste-fruity">
-                            <input type="checkbox" id="taste-fruity" name="taste" value="フルーティー" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">フルーティー</span>
-                        </label>
-                        <label class="inline-flex items-center" for="taste-spicy">
-                            <input type="checkbox" id="taste-spicy" name="taste" value="スパイシー" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">スパイシー</span>
-                        </label>
-                        <label class="inline-flex items-center" for="taste-smoky">
-                            <input type="checkbox" id="taste-smoky" name="taste" value="スモーキー" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">スモーキー</span>
-                        </label>
-                        <label class="inline-flex items-center" for="taste-other">
-                            <input type="checkbox" id="taste-other" name="taste" value="その他" 
-                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">その他</span>
-                        </label>
+            <div class="form-group">
+                <h2>お酒の情報を提供</h2>
+                <p class="required-note">* は必須項目です</p>
+                <form id="submissionForm">
+                    <div class="form-group">
+                        <label for="name" class="required">お酒の名前</label>
+                        <input type="text" id="name" name="name" required>
+                        <div class="error-message" id="nameError"></div>
                     </div>
-                </div>
 
-                <!-- 価格帯 -->
-                <div>
-                    <label for="priceRange" class="block text-sm font-medium text-gray-700">価格帯</label>
-                    <select id="priceRange" name="priceRange" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">選択してください</option>
-                        <option value="1,000円未満">1,000円未満</option>
-                        <option value="1,000円〜3,000円">1,000円〜3,000円</option>
-                        <option value="3,000円〜5,000円">3,000円〜5,000円</option>
-                        <option value="5,000円〜10,000円">5,000円〜10,000円</option>
-                        <option value="10,000円以上">10,000円以上</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label for="type" class="required">種類</label>
+                        <select id="type" name="type" required>
+                            <option value="">選択してください</option>
+                            <option value="ビール">ビール</option>
+                            <option value="ワイン">ワイン</option>
+                            <option value="日本酒">日本酒</option>
+                            <option value="焼酎">焼酎</option>
+                            <option value="ウイスキー">ウイスキー</option>
+                            <option value="その他">その他</option>
+                        </select>
+                        <div class="error-message" id="typeError"></div>
+                    </div>
 
-                <!-- アルコール度数 -->
-                <div>
-                    <label for="alcoholContent" class="block text-sm font-medium text-gray-700">アルコール度数 (%)</label>
-                    <input type="number" id="alcoholContent" name="alcoholContent" min="0" max="100" step="0.1" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
+                    <div class="form-group">
+                        <label for="description" class="required">説明</label>
+                        <textarea id="description" name="description" rows="4" required></textarea>
+                        <div class="error-message" id="descriptionError"></div>
+                    </div>
 
-                <!-- 製造元・産地 -->
-                <div>
-                    <label for="origin" class="block text-sm font-medium text-gray-700">製造元・産地</label>
-                    <input type="text" id="origin" name="origin"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
+                    <div class="form-group">
+                        <label for="taste" class="required">味の特徴（カンマ区切りで複数入力可）</label>
+                        <input type="text" id="taste" name="taste" placeholder="例：甘口,フルーティ,スパイシー" required>
+                        <div class="error-message" id="tasteError"></div>
+                    </div>
 
-                <!-- 画像 -->
-                <div>
-                    <label for="image" class="block text-sm font-medium text-gray-700">画像</label>
-                    <input type="file" id="image" name="image" accept="image/*"
-                           class="mt-1 block w-full text-sm text-gray-500
-                                  file:mr-4 file:py-2 file:px-4
-                                  file:rounded-md file:border-0
-                                  file:text-sm file:font-medium
-                                  file:bg-blue-50 file:text-blue-700
-                                  hover:file:bg-blue-100">
-                </div>
+                    <div class="form-group">
+                        <label for="priceRange" class="required">価格帯</label>
+                        <input type="text" id="priceRange" name="priceRange" placeholder="例：500円~1000円" required>
+                        <div class="error-message" id="priceRangeError"></div>
+                    </div>
 
-                <!-- 送信ボタン -->
-                <div>
-                    <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        情報を提供する
-                    </button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="alcoholContent" class="required">アルコール度数（%）</label>
+                        <input type="number" id="alcoholContent" name="alcoholContent" min="0" max="100" step="0.1" required>
+                        <div class="error-message" id="alcoholContentError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="origin" class="required">メーカー/産地</label>
+                        <input type="text" id="origin" name="origin" required>
+                        <div class="error-message" id="originError"></div>
+                    </div>
+
+                    <button type="submit">情報を提供する</button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
         // フォーム送信の処理
-        document.getElementById('submitForm').addEventListener('submit', async function(event) {
+        document.getElementById('submissionForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
             try {
@@ -153,39 +181,19 @@
                     name: document.getElementById('name').value,
                     type: document.getElementById('type').value,
                     description: document.getElementById('description').value,
-                    taste: Array.from(document.querySelectorAll('input[name="taste"]:checked')).map(cb => cb.value),
+                    taste: document.getElementById('taste').value.split(',').map(t => t.trim()),
                     priceRange: document.getElementById('priceRange').value,
                     alcoholContent: parseFloat(document.getElementById('alcoholContent').value),
-                    origin: document.getElementById('origin').value || ''
+                    origin: document.getElementById('origin').value
                 };
 
-                // 画像のアップロード
-                const imageFile = document.getElementById('image').files[0];
-                if (imageFile) {
-                    const imageData = new FormData();
-                    imageData.append('image', imageFile);
-
-                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${config.imgbb.apiKey}`, {
-                        method: 'POST',
-                        body: imageData
-                    });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        formData.imageUrl = result.data.url;
-                    }
-                }
-
-                // 投稿の追加
-                await dataManager.addSubmission(formData);
-
-                // 成功メッセージを表示
-                alert(config.messages.success.submit);
-                window.location.href = 'index.html';
-
+                // 投稿の保存
+                await db.addSubmission(formData);
+                alert('情報を提供していただき、ありがとうございます。\n管理者の承認後、サイトに反映されます。');
+                this.reset();
             } catch (error) {
-                console.error('投稿エラー:', error);
-                alert(error.message);
+                console.error('Error submitting form:', error);
+                alert('投稿に失敗しました。もう一度お試しください。');
             }
         });
     </script>
