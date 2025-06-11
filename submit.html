@@ -3,162 +3,149 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AlNavi - お酒情報の提供</title>
+    <title>お酒の情報提供 - AlNavi</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script type="module">
+        import { config, initializeConfig } from './config.js';
+        import { dataManager } from './data.js';
+
+        // 設定の初期化
+        if (!initializeConfig()) {
+            alert('設定の初期化に失敗しました。管理者に連絡してください。');
+        }
+
+        // グローバル変数として設定
+        window.config = config;
+        window.dataManager = dataManager;
+    </script>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold text-gray-800 flex items-center">
-                <i class="fas fa-wine-glass-alt text-red-600 mr-2"></i>
-                AlNavi
-            </a>
-            <nav class="flex gap-4">
-                <a href="index.html" class="text-sm text-gray-600 hover:text-red-600 transition-colors">検索に戻る</a>
-            </nav>
-        </div>
-    </header>
-
-    <!-- メインコンテンツ -->
-    <main class="container mx-auto px-4 py-8">
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
         <div class="max-w-2xl mx-auto">
-            <h1 class="text-2xl font-bold text-gray-800 mb-6">お酒情報の提供</h1>
-            
-            <!-- 提供フォーム -->
-            <form id="submitForm" class="bg-white rounded-lg shadow-sm p-6 space-y-6">
-                <!-- 基本情報 -->
-                <div class="space-y-4">
-                    <h2 class="text-lg font-medium text-gray-800">基本情報</h2>
-                    
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">お酒の名前 *</label>
-                        <input type="text" id="name" name="name" required
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                    </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-8">お酒の情報提供</h1>
 
-                    <div>
-                        <label for="type" class="block text-sm font-medium text-gray-700 mb-1">種類 *</label>
-                        <select id="type" name="type" required
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                            <option value="">選択してください</option>
-                            <option value="日本酒">日本酒</option>
-                            <option value="ワイン">ワイン</option>
-                            <option value="ウイスキー">ウイスキー</option>
-                            <option value="ビール">ビール</option>
-                            <option value="カクテル">カクテル</option>
-                            <option value="その他">その他</option>
-                        </select>
-                    </div>
+            <form id="submitForm" class="bg-white rounded-lg shadow-md p-6 space-y-6">
+                <!-- お酒の名前 -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">お酒の名前</label>
+                    <input type="text" id="name" name="name" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
 
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">説明 *</label>
-                        <textarea id="description" name="description" required rows="3"
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            placeholder="味わい、香り、特徴などを記入してください"></textarea>
-                    </div>
+                <!-- お酒の種類 -->
+                <div>
+                    <label for="type" class="block text-sm font-medium text-gray-700">お酒の種類</label>
+                    <select id="type" name="type" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">選択してください</option>
+                        <option value="ビール">ビール</option>
+                        <option value="ワイン">ワイン</option>
+                        <option value="日本酒">日本酒</option>
+                        <option value="ウイスキー">ウイスキー</option>
+                        <option value="焼酎">焼酎</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
 
-                    <div>
-                        <label for="taste" class="block text-sm font-medium text-gray-700 mb-1">味の特徴 *</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="taste" value="甘口" class="form-checkbox">
-                                    <span class="ml-2">甘口</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="taste" value="辛口" class="form-checkbox">
-                                    <span class="ml-2">辛口</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="taste" value="フルーティー" class="form-checkbox">
-                                    <span class="ml-2">フルーティー</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="taste" value="スパイシー" class="form-checkbox">
-                                    <span class="ml-2">スパイシー</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                <!-- 説明 -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">説明</label>
+                    <textarea id="description" name="description" rows="3" required
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
 
-                    <div>
-                        <label for="priceRange" class="block text-sm font-medium text-gray-700 mb-1">価格帯 *</label>
-                        <input type="text" id="priceRange" name="priceRange" required
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            placeholder="例: 1,000円~3,000円">
-                    </div>
-
-                    <div>
-                        <label for="alcoholContent" class="block text-sm font-medium text-gray-700 mb-1">アルコール度数 *</label>
-                        <input type="number" id="alcoholContent" name="alcoholContent" required step="0.1" min="0" max="100"
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            placeholder="例: 15.5">
-                    </div>
-
-                    <div>
-                        <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">原産地（任意）</label>
-                        <input type="text" id="origin" name="origin"
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            placeholder="例: 日本 新潟県">
+                <!-- 味の特徴 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">味の特徴</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="inline-flex items-center" for="taste-sweet">
+                            <input type="checkbox" id="taste-sweet" name="taste" value="甘口" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">甘口</span>
+                        </label>
+                        <label class="inline-flex items-center" for="taste-dry">
+                            <input type="checkbox" id="taste-dry" name="taste" value="辛口" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">辛口</span>
+                        </label>
+                        <label class="inline-flex items-center" for="taste-fruity">
+                            <input type="checkbox" id="taste-fruity" name="taste" value="フルーティー" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">フルーティー</span>
+                        </label>
+                        <label class="inline-flex items-center" for="taste-spicy">
+                            <input type="checkbox" id="taste-spicy" name="taste" value="スパイシー" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">スパイシー</span>
+                        </label>
+                        <label class="inline-flex items-center" for="taste-smoky">
+                            <input type="checkbox" id="taste-smoky" name="taste" value="スモーキー" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">スモーキー</span>
+                        </label>
+                        <label class="inline-flex items-center" for="taste-other">
+                            <input type="checkbox" id="taste-other" name="taste" value="その他" 
+                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">その他</span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- 画像アップロード -->
-                <div class="space-y-4">
-                    <h2 class="text-lg font-medium text-gray-800">画像</h2>
-                    <div>
-                        <label for="image" class="block text-sm font-medium text-gray-700 mb-1">お酒の写真（任意）</label>
-                        <input type="file" id="image" name="image" accept="image/*"
-                            class="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                        <div id="imagePreview" class="mt-2 hidden">
-                            <img src="" alt="プレビュー" class="max-w-xs rounded-lg">
-                        </div>
-                    </div>
+                <!-- 価格帯 -->
+                <div>
+                    <label for="priceRange" class="block text-sm font-medium text-gray-700">価格帯</label>
+                    <select id="priceRange" name="priceRange" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">選択してください</option>
+                        <option value="1,000円未満">1,000円未満</option>
+                        <option value="1,000円〜3,000円">1,000円〜3,000円</option>
+                        <option value="3,000円〜5,000円">3,000円〜5,000円</option>
+                        <option value="5,000円〜10,000円">5,000円〜10,000円</option>
+                        <option value="10,000円以上">10,000円以上</option>
+                    </select>
+                </div>
+
+                <!-- アルコール度数 -->
+                <div>
+                    <label for="alcoholContent" class="block text-sm font-medium text-gray-700">アルコール度数 (%)</label>
+                    <input type="number" id="alcoholContent" name="alcoholContent" min="0" max="100" step="0.1" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- 製造元・産地 -->
+                <div>
+                    <label for="origin" class="block text-sm font-medium text-gray-700">製造元・産地</label>
+                    <input type="text" id="origin" name="origin"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- 画像 -->
+                <div>
+                    <label for="image" class="block text-sm font-medium text-gray-700">画像</label>
+                    <input type="file" id="image" name="image" accept="image/*"
+                           class="mt-1 block w-full text-sm text-gray-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-md file:border-0
+                                  file:text-sm file:font-medium
+                                  file:bg-blue-50 file:text-blue-700
+                                  hover:file:bg-blue-100">
                 </div>
 
                 <!-- 送信ボタン -->
-                <div class="pt-4">
-                    <button type="submit" id="submitButton"
-                        class="w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors">
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         情報を提供する
                     </button>
                 </div>
             </form>
         </div>
-    </main>
+    </div>
 
     <script>
-        // ImgBB APIキー
-        const IMGBB_API_KEY = 'YOUR_IMGBB_API_KEY'; // .envファイルから読み込む
-
-        // 画像プレビュー
-        document.getElementById('image').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.querySelector('img').src = e.target.result;
-                    preview.classList.remove('hidden');
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // フォーム送信処理
-        document.getElementById('submitForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const submitButton = document.getElementById('submitButton');
-            submitButton.disabled = true;
-            submitButton.textContent = '送信中...';
+        // フォーム送信の処理
+        document.getElementById('submitForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
 
             try {
                 // フォームデータの取得
@@ -169,18 +156,16 @@
                     taste: Array.from(document.querySelectorAll('input[name="taste"]:checked')).map(cb => cb.value),
                     priceRange: document.getElementById('priceRange').value,
                     alcoholContent: parseFloat(document.getElementById('alcoholContent').value),
-                    origin: document.getElementById('origin').value || '',  // 空文字列をデフォルト値として設定
-                    status: 'pending',
-                    submittedAt: new Date().toISOString()
+                    origin: document.getElementById('origin').value || ''
                 };
 
-                // 画像のアップロード（ImgBBを使用）
+                // 画像のアップロード
                 const imageFile = document.getElementById('image').files[0];
                 if (imageFile) {
                     const imageData = new FormData();
                     imageData.append('image', imageFile);
 
-                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    const response = await fetch(`https://api.imgbb.com/1/upload?key=${config.imgbb.apiKey}`, {
                         method: 'POST',
                         body: imageData
                     });
@@ -191,28 +176,16 @@
                     }
                 }
 
-                // GitHubにプルリクエストを作成するための情報を表示
-                const submissionData = JSON.stringify(formData, null, 2);
-                const message = `
-お酒の情報を提供していただき、ありがとうございます！
+                // 投稿の追加
+                await dataManager.addSubmission(formData);
 
-以下の情報を管理者に送信してください：
-
-\`\`\`json
-${submissionData}
-\`\`\`
-
-この情報は管理者の確認後に公開されます。
-`;
-
-                alert(message);
+                // 成功メッセージを表示
+                alert(config.messages.success.submit);
                 window.location.href = 'index.html';
 
             } catch (error) {
-                console.error('Error:', error);
-                alert('申し訳ありません。エラーが発生しました。もう一度お試しください。');
-                submitButton.disabled = false;
-                submitButton.textContent = '情報を提供する';
+                console.error('投稿エラー:', error);
+                alert(error.message);
             }
         });
     </script>
