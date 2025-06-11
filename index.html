@@ -6,6 +6,18 @@
     <title>AlNavi - お酒の検索ナビ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+      .favorite-btn {
+        transition: all 0.2s ease;
+      }
+      .favorite-btn.active {
+        color: #ef4444;
+        transform: scale(1.1);
+      }
+      .favorite-btn:hover {
+        transform: scale(1.1);
+      }
+    </style>
   </head>
 <body class="min-h-screen flex flex-col bg-gray-50 font-sans">
     <!-- Header -->
@@ -135,6 +147,22 @@
             <p>© 2024 AlNavi. All rights reserved.</p>
         </div>
     </footer>
+
+    <div id="favoritesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl mx-auto mt-20 max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">お気に入り一覧</h2>
+                    <button id="closeFavoritesModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                <div id="favoritesList" class="grid grid-cols-1 gap-6">
+                    <!-- お気に入りアイテムがここに動的に追加されます -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // データの取得と検索機能
@@ -833,13 +861,20 @@
         function handleSearch(event) {
             event.preventDefault(); // フォームのデフォルト送信を防止
             const query = searchInput.value.trim();
-            performSearch(query);
+            if (query) {
+                performSearch(query);
+            }
         }
 
         // 既存のイベントリスナーを更新
-        searchInput.addEventListener('input', (e) => {
-            // 入力中の検索は維持（オプション）
-            // performSearch(e.target.value);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // フォームのデフォルト送信を防止
+                const query = searchInput.value.trim();
+                if (query) {
+                    performSearch(query);
+                }
+            }
         });
 
         // 検索履歴ボタンのイベントリスナー
@@ -850,6 +885,87 @@
         // おすすめボタンのイベントリスナー
         document.getElementById('recommendationsBtn').addEventListener('click', () => {
             showRecommendations();
+        });
+
+        // お気に入り関連の機能
+        const favoritesBtn = document.getElementById('favoritesBtn');
+        const favoritesModal = document.getElementById('favoritesModal');
+        const closeFavoritesModal = document.getElementById('closeFavoritesModal');
+        const favoritesList = document.getElementById('favoritesList');
+
+        // お気に入りの状態を管理
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+        // お気に入りの保存
+        function saveFavorites() {
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+        }
+
+        // お気に入りの追加/削除
+        function toggleFavorite(itemId, item) {
+            const index = favorites.findIndex(fav => fav.id === itemId);
+            if (index === -1) {
+                favorites.push(item);
+            } else {
+                favorites.splice(index, 1);
+            }
+            saveFavorites();
+            updateFavoriteButtons();
+            updateFavoritesList();
+        }
+
+        // お気に入りボタンの状態更新
+        function updateFavoriteButtons() {
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                const itemId = btn.dataset.itemId;
+                btn.classList.toggle('active', favorites.some(fav => fav.id === itemId));
+            });
+        }
+
+        // お気に入り一覧の更新
+        function updateFavoritesList() {
+            favoritesList.innerHTML = favorites.length === 0 
+                ? '<p class="text-center text-gray-500 py-8">お気に入りはまだありません</p>'
+                : favorites.map(item => `
+                    <div class="bg-white rounded-lg shadow-sm p-6 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <img src="${item.imageUrl || 'https://via.placeholder.com/100x100?text=No+Image'}" 
+                                 alt="${item.name}" 
+                                 class="w-20 h-20 object-cover rounded-lg" />
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800">${item.name}</h3>
+                                <p class="text-sm text-gray-600">${item.type}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button onclick="toggleFavorite('${item.id}', ${JSON.stringify(item)})" 
+                                    class="favorite-btn active text-2xl text-red-500">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            <button onclick="performSearch('${item.name}')" 
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                詳細を見る
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // モーダルの表示/非表示
+        favoritesBtn.addEventListener('click', () => {
+            favoritesModal.classList.remove('hidden');
+            updateFavoritesList();
+        });
+
+        closeFavoritesModal.addEventListener('click', () => {
+            favoritesModal.classList.add('hidden');
+        });
+
+        // モーダル外クリックで閉じる
+        favoritesModal.addEventListener('click', (e) => {
+            if (e.target === favoritesModal) {
+                favoritesModal.classList.add('hidden');
+            }
         });
 
         // 初期データの読み込み
