@@ -511,8 +511,15 @@
                             <img src="${item.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image'}" 
                                  alt="${item.name}" 
                                  class="w-full h-80 object-cover rounded-lg shadow-sm" />
-                            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-800">
-                                ${item.type}
+                            <div class="absolute top-4 right-4 flex gap-2">
+                                <button onclick="toggleFavorite('${item.id}', ${JSON.stringify(item)})" 
+                                        class="favorite-btn ${favorites.some(fav => fav.id === item.id) ? 'active' : ''} text-2xl bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm"
+                                        data-item-id="${item.id}">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <div class="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium text-gray-800">
+                                    ${item.type}
+                                </div>
                             </div>
                         </div>
                         <div class="flex flex-col">
@@ -878,9 +885,12 @@
         });
 
         // 検索履歴ボタンのイベントリスナー
-        document.querySelector('button:has(.fa-history)').addEventListener('click', () => {
-            showSearchHistory();
-        });
+        const searchHistoryBtn = document.querySelector('button .fa-history')?.closest('button');
+        if (searchHistoryBtn) {
+            searchHistoryBtn.addEventListener('click', () => {
+                showSearchHistory();
+            });
+        }
 
         // おすすめボタンのイベントリスナー
         document.getElementById('recommendationsBtn').addEventListener('click', () => {
