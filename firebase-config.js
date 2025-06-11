@@ -1,7 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getDatabase, ref, set, get, push, remove } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA-ncozZ0HZQqdK2-0hA0YwfwcKO1iozDs",
@@ -18,7 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
-const analytics = getAnalytics(app);
+
 // データベースの参照
 const submissionsRef = ref(database, 'submissions');
 const alcoholsRef = ref(database, 'alcohols');
