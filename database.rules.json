@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "submissions": {
+      // 誰でも投稿を追加可能
+      ".write": true,
+      // 認証済み管理者のみ読み取り可能
+      ".read": "auth != null",
+      "$submissionId": {
+        // 認証済み管理者のみ更新・削除可能
+        ".write": "auth != null"
+      }
+    },
+    "alcohols": {
+      // 誰でも読み取り可能
+      ".read": true,
+      // 認証済み管理者のみ書き込み可能
+      ".write": "auth != null",
+      "$alcoholId": {
+        // 認証済み管理者のみ更新・削除可能
+        ".write": "auth != null"
+      }
+    }
+  }
+} 
