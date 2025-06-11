@@ -3,15 +3,21 @@ import { getDatabase, ref, set, get, push, remove } from 'https://www.gstatic.co
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 const firebaseConfig = {
+    apiKey: "AIzaSyA-ncozZ0HZQqdK2-0hA0YwfwcKO1iozDs",
+    authDomain: "alnavi.firebaseapp.com",
     databaseURL: "https://alnavi-default-rtdb.asia-southeast1.firebasedatabase.app",
-    // 他の設定値は Firebase Console から取得して追加
-};
+    projectId: "alnavi",
+    storageBucket: "alnavi.firebasestorage.app",
+    messagingSenderId: "191811562613",
+    appId: "1:191811562613:web:94e082e0929fe8b4685c3c",
+    measurementId: "G-EQPJV4Q4R7"
+  };
 
 // Firebaseの初期化
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 const auth = getAuth(app);
-
+const analytics = getAnalytics(app);
 // データベースの参照
 const submissionsRef = ref(database, 'submissions');
 const alcoholsRef = ref(database, 'alcohols');
