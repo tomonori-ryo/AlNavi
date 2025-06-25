@@ -19,21 +19,7 @@
       }
 
       body {
-        background-image: url('https://img.freepik.com/free-photo/cheers-beer-mugs-pub_1150-14173.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
-        position: relative;
-      }
-      body::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(30, 20, 10, 0.55);
-        backdrop-filter: blur(2px);
-        z-index: -1;
-        pointer-events: none;
+        background: #f7fafc;
       }
       main {
         background: rgba(255,255,255,0.92);
@@ -123,6 +109,42 @@
                 </button>
                 <button class="px-4 py-2 rounded-full bg-pink-50 text-pink-600 hover:bg-pink-100 transition-colors text-sm font-medium">
                     <i class="fas fa-lemon mr-1"></i>味別
+                </button>
+            </div>
+
+            <!-- 検索タイプ選択ボタンの下に味別グリッドを追加（初期は非表示） -->
+            <div id="tasteGrid" class="mt-6 grid grid-cols-4 gap-4 max-w-2xl mx-auto hidden">
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="甘口">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" alt="甘口" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">甘口</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="辛口">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046869.png" alt="辛口" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">辛口</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="苦味">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075979.png" alt="苦味" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">苦味</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="酸味">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046862.png" alt="酸味" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">酸味</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="フルティー">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075978.png" alt="フルティー" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">フルティー</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="スパイシー">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046872.png" alt="スパイシー" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">スパイシー</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="ドライ">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046871.png" alt="ドライ" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">ドライ</span>
+                </button>
+                <button class="taste-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-taste="まろやか">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1046/1046873.png" alt="まろやか" class="w-12 h-12 mb-2" />
+                    <span class="text-base font-semibold text-gray-800">まろやか</span>
                 </button>
             </div>
 
@@ -1086,6 +1108,26 @@
             // 既存のカテゴリーフィルターと連動
             document.querySelectorAll('.category-filter').forEach(filterBtn => {
               if (filterBtn.dataset.category === category) {
+                filterBtn.click();
+              }
+            });
+          });
+        });
+      }
+
+      // 味別ボタンでグリッド表示の切り替え
+      const tasteBtn = document.querySelector('.bg-pink-50');
+      const tasteGrid = document.getElementById('tasteGrid');
+      if (tasteBtn && tasteGrid) {
+        tasteBtn.addEventListener('click', () => {
+          tasteGrid.classList.toggle('hidden');
+        });
+        // 味グリッドのクリックでフィルターを有効化
+        tasteGrid.querySelectorAll('.taste-grid-item').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const taste = this.dataset.taste;
+            document.querySelectorAll('.taste-filter').forEach(filterBtn => {
+              if (filterBtn.dataset.taste === taste) {
                 filterBtn.click();
               }
             });
