@@ -104,6 +104,22 @@
                 </div>
             </form>
 
+            <!-- 検索タイプ選択（おすすめ・人気・初心者向け・履歴） -->
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="recommendationsBtn" class="px-4 py-2 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-thumbs-up mr-1"></i>あなたへのおすすめ
+                </button>
+                <button class="px-4 py-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-fire mr-1"></i>人気のお酒
+                </button>
+                <button class="px-4 py-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-star mr-1"></i>初心者向け
+                </button>
+                <button class="px-4 py-2 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-sm font-medium">
+                    <i class="fas fa-history mr-1"></i>検索履歴
+                </button>
+            </div>
+
             <!-- 種類別カテゴリグリッド -->
             <div class="mt-8 grid grid-cols-3 gap-4 max-w-xl mx-auto">
                 <button class="category-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-category="ビール">
@@ -141,22 +157,6 @@
                 <button class="category-grid-item flex flex-col items-center p-4 bg-white bg-opacity-80 rounded-xl shadow hover:shadow-lg transition cursor-pointer" data-category="その他">
                     <img src="https://cdn-icons-png.flaticon.com/512/565/565547.png" alt="その他" class="w-14 h-14 mb-2" />
                     <span class="text-base font-semibold text-gray-800">その他</span>
-                </button>
-            </div>
-
-            <!-- 検索タイプ選択 -->
-            <div class="mt-6 flex flex-wrap justify-center gap-3">
-                <button id="recommendationsBtn" class="px-4 py-2 rounded-full bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-thumbs-up mr-1"></i>あなたへのおすすめ
-                </button>
-                <button class="px-4 py-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-fire mr-1"></i>人気のお酒
-                </button>
-                <button class="px-4 py-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-star mr-1"></i>初心者向け
-                </button>
-                <button class="px-4 py-2 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors text-sm font-medium">
-                    <i class="fas fa-history mr-1"></i>検索履歴
                 </button>
             </div>
 
